@@ -1,7 +1,7 @@
-# lmth deck conventions (for Cursor rules / AGENTS.md / any coding agent)
+# pml deck conventions (for Cursor rules / AGENTS.md / any coding agent)
 
-This project contains a lmth presentation deck: a folder of plain HTML slides
-served locally with live reload (`lmth serve <deck>`). Edit the files; the
+This project contains a pml presentation deck: a folder of plain HTML slides
+served locally with live reload (`pml serve <deck>`). Edit the files; the
 user's browser updates automatically.
 
 Rules:
@@ -21,6 +21,6 @@ Rules:
 7. Entrance effects: theme.css defines `fx-fade-in`, `fx-fade-up`,
    `fx-zoom-in`, `fx-slide-left`, `fx-slide-right`, `fx-blur-in` classes;
    stagger via inline `style="--fx-delay:0.4s"`. Sparingly — 1–2 per slide.
-   Editors may inject a `<style data-lmth-fx>` block into slides; keep it.
+   Editors may inject a `<style data-pml-fx>` block into slides; keep it.
 8. Design bar: one big statement per slide, strong hierarchy, ≤5 bullets,
    use theme CSS variables for color.

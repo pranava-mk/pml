@@ -135,18 +135,18 @@ code, .mono { font-family: 'JetBrains Mono', monospace; }
 .vs .card.win ul { color: var(--text); }
 .vs .card ul li::marker { color: var(--accent); }
 
-/* ---------- entrance effects (lmth presets — also injectable by the editor) ---------- */
+/* ---------- entrance effects (pml presets — also injectable by the editor) ---------- */
 [class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
-.fx-fade-in{animation-name:lmthFadeIn}
-.fx-fade-up{animation-name:lmthFadeUp}
-.fx-zoom-in{animation-name:lmthZoomIn}
-.fx-slide-left{animation-name:lmthSlideLeft}
-.fx-slide-right{animation-name:lmthSlideRight}
-.fx-blur-in{animation-name:lmthBlurIn}
-@keyframes lmthFadeIn{from{opacity:0}}
-@keyframes lmthFadeUp{from{opacity:0;translate:0 36px}}
-@keyframes lmthZoomIn{from{opacity:0;scale:.82}}
-@keyframes lmthSlideLeft{from{opacity:0;translate:60px 0}}
-@keyframes lmthSlideRight{from{opacity:0;translate:-60px 0}}
-@keyframes lmthBlurIn{from{opacity:0;filter:blur(14px)}}
+.fx-fade-in{animation-name:pmlFadeIn}
+.fx-fade-up{animation-name:pmlFadeUp}
+.fx-zoom-in{animation-name:pmlZoomIn}
+.fx-slide-left{animation-name:pmlSlideLeft}
+.fx-slide-right{animation-name:pmlSlideRight}
+.fx-blur-in{animation-name:pmlBlurIn}
+@keyframes pmlFadeIn{from{opacity:0}}
+@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}
+@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
+@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}
+@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}
+@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
 @media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}

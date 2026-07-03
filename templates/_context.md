@@ -1,7 +1,7 @@
 # Deck template
 
 ## What this is for
-Scaffold copied verbatim by `lmth new <name>` (see `../bin/lmth.js`). Ships the default theme + 3 starter slides.
+Scaffold copied verbatim by `pml new <name>` (see `../bin/pml.js`). Ships the default theme + 3 starter slides.
 
 ## Folder contents
 | Path | What it holds |
@@ -16,7 +16,7 @@ Scaffold copied verbatim by `lmth new <name>` (see `../bin/lmth.js`). Ships the 
 | Theme/starter change | `deck/theme.css` + slides | src/ | — |
 
 ## Conventions
-- Must always satisfy slide contract (`../docs/SPEC_lmth.md`).
+- Must always satisfy slide contract (`../docs/SPEC_pml.md`).
 - `examples/launch/theme.css` = this theme + extras; big theme changes → sync both.
 - Keep starter slides instructive: text tells user what to try.
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// lmth CLI — `lmth new <name>` scaffolds a deck, `lmth serve [dir]` runs it.
+// pml CLI — `pml new <name>` scaffolds a deck, `pml serve [dir]` runs it.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -9,11 +9,11 @@ import { startServer } from '../src/server/index.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const [cmd, ...rest] = process.argv.slice(2);
 
-const HELP = `lmth — presentations as plain HTML files
+const HELP = `pml — presentations as plain HTML files
 
 Usage:
-  lmth new <name>              Scaffold a new deck in ./<name>
-  lmth serve [dir] [-p port]   Serve a deck (default: current dir, port 4321)
+  pml new <name>              Scaffold a new deck in ./<name>
+  pml serve [dir] [-p port]   Serve a deck (default: current dir, port 4321)
 
 The served deck gets: visual editor (/edit), presenter mode (/present),
 comments, and live reload when any file changes — including edits made
@@ -26,7 +26,7 @@ const die = (msg) => {
 
 if (cmd === 'new') {
   const name = rest[0];
-  if (!name) die('Usage: lmth new <name>');
+  if (!name) die('Usage: pml new <name>');
   const dest = path.resolve(name);
   if (fs.existsSync(dest)) die(`Refusing to overwrite existing path: ${dest}`);
   fs.cpSync(path.join(ROOT, 'templates/deck'), dest, { recursive: true });
@@ -34,7 +34,7 @@ if (cmd === 'new') {
   const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
   meta.title = name.replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2) + '\n');
-  console.log(`Deck created: ${dest}\n\n  cd ${name} && lmth serve\n`);
+  console.log(`Deck created: ${dest}\n\n  cd ${name} && pml serve\n`);
 } else if (cmd === 'serve') {
   let port = 4321;
   const args = [];
@@ -45,7 +45,7 @@ if (cmd === 'new') {
   const dir = args[0] || '.';
   startServer({ deckDir: dir, port })
     .then(({ port, deckDir }) => {
-      console.log(`\n  lmth serving ${deckDir}`);
+      console.log(`\n  pml serving ${deckDir}`);
       console.log(`  ▸ overview   http://localhost:${port}/`);
       console.log(`  ▸ present    http://localhost:${port}/present`);
       console.log(`\n  Edit slide files in any editor or AI agent — browser reloads live.\n`);

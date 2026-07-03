@@ -1,7 +1,7 @@
 # Landing site
 
 ## What this is for
-Public marketing page for lmth. Itself structured as a presentation: GSAP horizontal-scroll panels, snap, dot nav, arrow keys. Single self-contained file, no build step.
+Public marketing page for pml. Itself structured as a presentation: GSAP horizontal-scroll panels, snap, dot nav, arrow keys. Single self-contained file, no build step.
 
 ## Folder contents
 | Path | What it holds |

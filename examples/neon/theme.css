@@ -1,0 +1,129 @@
+/* Neon theme — black, electric green/cyan, mono. Loud on purpose. */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@500;700;900&display=swap');
+
+:root {
+  --bg: #030404;
+  --ink: #e8fff4;
+  --muted: #5d7a6d;
+  --neon: #00ff9d;
+  --cyan: #00d5ff;
+  --line: #0e2419;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #000;
+}
+
+.slide {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  padding: 84px 96px;
+  background:
+    linear-gradient(rgba(0, 255, 157, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 157, 0.04) 1px, transparent 1px),
+    var(--bg);
+  background-size: 48px 48px, 48px 48px, auto;
+  color: var(--ink);
+  font-family: 'Outfit', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--neon);
+  margin: 0 0 20px;
+  text-shadow: 0 0 18px rgba(0, 255, 157, 0.5);
+}
+h1.title {
+  font-size: 92px;
+  font-weight: 900;
+  line-height: 0.98;
+  margin: 0 0 26px;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+h2.heading {
+  font-size: 56px;
+  font-weight: 900;
+  margin: 0 0 34px;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+.glow {
+  color: var(--neon);
+  text-shadow: 0 0 32px rgba(0, 255, 157, 0.55);
+}
+.glow-c {
+  color: var(--cyan);
+  text-shadow: 0 0 32px rgba(0, 213, 255, 0.55);
+}
+.subtitle { font-size: 25px; color: var(--muted); margin: 0; line-height: 1.6; font-weight: 500; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
+.tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  border: 1px solid var(--neon);
+  color: var(--neon);
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin: 0 10px 10px 0;
+  box-shadow: 0 0 20px rgba(0, 255, 157, 0.18), inset 0 0 12px rgba(0, 255, 157, 0.06);
+}
+.terminal-box {
+  background: rgba(0, 20, 12, 0.55);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 26px 30px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  line-height: 2;
+  color: var(--ink);
+}
+.terminal-box .p { color: var(--cyan); }
+.terminal-box .c { color: var(--muted); }
+.bullets { font-size: 25px; line-height: 2; margin: 0; padding-left: 26px; font-weight: 500; }
+.bullets li::marker { color: var(--neon); }
+
+.footer {
+  position: absolute;
+  bottom: 36px;
+  left: 96px;
+  right: 96px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.14em;
+}
+
+/* ---------- entrance effects (pml presets) ---------- */
+[class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
+.fx-fade-in{animation-name:pmlFadeIn}
+.fx-fade-up{animation-name:pmlFadeUp}
+.fx-zoom-in{animation-name:pmlZoomIn}
+.fx-slide-left{animation-name:pmlSlideLeft}
+.fx-slide-right{animation-name:pmlSlideRight}
+.fx-blur-in{animation-name:pmlBlurIn}
+@keyframes pmlFadeIn{from{opacity:0}}
+@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}
+@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
+@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}
+@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}
+@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
+@media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}

@@ -1,0 +1,102 @@
+/* Boardroom theme — light, editorial, serif. Shows pml isn't locked to dark mode. */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg: #faf7f2;
+  --ink: #16130e;
+  --muted: #7a7265;
+  --accent: #9a6b2f;
+  --line: #e3dccf;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #e9e4da;
+}
+
+.slide {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  padding: 88px 104px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 20px;
+}
+h1.title {
+  font-family: 'Playfair Display', serif;
+  font-size: 84px;
+  font-weight: 900;
+  line-height: 1.04;
+  margin: 0 0 26px;
+  letter-spacing: -0.01em;
+}
+h2.heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 52px;
+  font-weight: 700;
+  margin: 0 0 36px;
+}
+.subtitle { font-size: 24px; color: var(--muted); margin: 0; line-height: 1.6; font-weight: 400; }
+.rule { width: 72px; height: 3px; background: var(--accent); border: 0; margin: 0 0 28px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.stat-block { border-top: 2px solid var(--ink); padding-top: 18px; }
+.stat-block .stat {
+  font-family: 'Playfair Display', serif;
+  font-size: 64px;
+  font-weight: 900;
+  margin: 0 0 6px;
+}
+.stat-block .stat em { color: var(--accent); font-style: normal; }
+.stat-block p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1.6; }
+.bullets { font-size: 24px; line-height: 2.1; margin: 0; padding-left: 24px; }
+.bullets li::marker { color: var(--accent); }
+
+.footer {
+  position: absolute;
+  bottom: 40px;
+  left: 104px;
+  right: 104px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+/* ---------- entrance effects (pml presets) ---------- */
+[class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
+.fx-fade-in{animation-name:pmlFadeIn}
+.fx-fade-up{animation-name:pmlFadeUp}
+.fx-zoom-in{animation-name:pmlZoomIn}
+.fx-slide-left{animation-name:pmlSlideLeft}
+.fx-slide-right{animation-name:pmlSlideRight}
+.fx-blur-in{animation-name:pmlBlurIn}
+@keyframes pmlFadeIn{from{opacity:0}}
+@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}
+@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
+@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}
+@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}
+@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
+@media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}

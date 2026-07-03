@@ -1,12 +1,12 @@
 # Examples
 
 ## What this is for
-Demo decks. `launch/` = product showcase — must look fabulous, doubles as manual test fixture for server/editor.
+Demo decks — `npm run demo` serves this folder in hub mode. `launch/` = product showcase (dark/gradient), `boardroom/` = light editorial serif theme, `neon/` = loud cyber theme. Each shows theming range; launch doubles as test fixture.
 
 ## Folder contents
 | Path | What it holds |
 |------|---------------|
-| `launch/slides/*.html` | 6 slides pitching lmth |
+| `launch/slides/*.html` | 6 slides pitching pml |
 | `launch/theme.css` | Template theme + launch extras (codeblock, vs, grid-3) |
 | `launch/deck.json` | Title/author |
 
@@ -17,7 +17,7 @@ Demo decks. `launch/` = product showcase — must look fabulous, doubles as manu
 | New demo deck | `../templates/deck/` as base | launch/ | — |
 
 ## Conventions
-Slide contract from `../docs/SPEC_lmth.md` is law: standalone doc, `../theme.css` link, one `.slide` root 1280×720 `position:relative`, no JS.
+Slide contract from `../docs/SPEC_pml.md` is law: standalone doc, `../theme.css` link, one `.slide` root 1280×720 `position:relative`, no JS.
 
 ## Available skills
 | Skill | When to use |
