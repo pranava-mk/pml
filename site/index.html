@@ -400,6 +400,7 @@
   .cta-panel h2 { font-size: clamp(48px, 7vw, 96px); margin: 0 auto 30px; }
   .install {
     display: inline-block;
+    position: relative;
     text-align: left;
     background: var(--bg2);
     border: 1px solid var(--line);
@@ -412,6 +413,21 @@
   }
   .install .p { color: var(--accent-2); }
   .install .dim { color: #5a5a78; }
+  #copy-install {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 8px;
+    padding: 5px 11px;
+    font: 12px 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  #copy-install:hover { color: var(--text); border-color: var(--accent); }
+  #copy-install.ok { color: #3ddc84; border-color: #3ddc84; }
   footer-note, .foot {
     display: block;
     margin-top: 60px;
@@ -582,6 +598,7 @@
     <div class="panel-inner">
       <h2 class="display" data-stagger>Start in<br><span class="grad">ten seconds.</span></h2>
       <div class="install" data-stagger>
+        <button id="copy-install" title="Copy commands">⧉ copy</button>
         <div><span class="p">$</span> git clone https://github.com/pranava-mk/pml</div>
         <div><span class="p">$</span> node pml/bin/pml.js new my-deck</div>
         <div><span class="p">$</span> node pml/bin/pml.js serve my-deck <span class="dim"># → localhost:4321</span></div>
@@ -627,6 +644,17 @@
     }
   };
   typeTick();
+
+  // copy install commands
+  const copyBtn = document.getElementById('copy-install');
+  copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(
+      'git clone https://github.com/pranava-mk/pml\nnode pml/bin/pml.js new my-deck\nnode pml/bin/pml.js serve my-deck'
+    );
+    copyBtn.textContent = '✓ copied';
+    copyBtn.classList.add('ok');
+    setTimeout(() => { copyBtn.textContent = '⧉ copy'; copyBtn.classList.remove('ok'); }, 1800);
+  });
 
   const panels = [...document.querySelectorAll('.panel')];
   const dots = document.getElementById('dots');
