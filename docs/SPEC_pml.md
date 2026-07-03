@@ -76,9 +76,20 @@ Transitions between slides per `deck.json` `"transition"`: `slide` (default), `f
 
 Overview: per-slide duplicate/delete (soft) + click-name-to-rename, ＋ New slide, ⇩ Export, deck title contenteditable (saves to deck.json), back-link to hub. Hub: deck grid with present/export shortcuts, ＋ New deck modal. All controls have aria-labels + focus-visible styles.
 
+## Browser playground (site/app/)
+
+Full product with zero install, hosted at `/app/` on the site domain. Decks
+live in localStorage. The real editor runtime (site/app/editor.js|css =
+copies of src/editor/*, synced via `npm run sync-app`) runs inside a srcdoc
+iframe; a bootstrap script bridges `/api/*` fetches, navigation
+(`window.__PML_NAV__`), and EventSource to the host page via postMessage.
+Hub / overview / present / single-file export implemented client-side.
+Saved slides keep the canonical `theme.css` link (theme injected as a
+runtime-tagged style, stripped on save).
+
 ## Landing site (site/)
 
-`site/index.html` — self-contained, GSAP (CDN) page that IS a deck: hard slide-snap engine (wheel burst/swipe/keys/dots/header-nav = exactly one slide, no in-between scroll), custom cursor dot+ring+glow, magnetic buttons, per-panel staggers, typing terminal. Mobile keeps deck behavior via swipe. Reduced-motion = instant jumps. No build step.
+`site/index.html` — self-contained, GSAP (CDN) page that IS a deck: hard slide-snap engine (wheel burst/swipe/keys/dots/header-nav = exactly one slide, no in-between scroll), custom cursor dot+ring+glow, magnetic buttons, per-panel staggers, typing terminal. Mobile keeps deck behavior via swipe; phone PORTRAIT (touch) rotates the whole page 90° (`#app` wrapper, dims via `--pw/--ph` custom props, swipe axes swapped) so the deck is always landscape — at `orientation: landscape` the transform drops, so OS auto-rotate never double-rotates. Reduced-motion = instant jumps. No build step.
 
 ## CLI (bin/pml.js)
 

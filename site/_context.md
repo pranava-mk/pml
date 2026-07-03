@@ -6,7 +6,9 @@ Public marketing page for pml. Itself structured as a presentation: GSAP horizon
 ## Folder contents
 | Path | What it holds |
 |------|---------------|
-| `index.html` | Everything: markup, CSS, JS. GSAP + fonts from CDN |
+| `index.html` | Landing deck: markup, CSS, JS. GSAP + fonts from CDN |
+| `app/index.html` | Browser playground: localStorage decks, iframe editor host |
+| `app/editor.js\|css` | COPIES of src/editor/* — regenerate with `npm run sync-app` after editor changes |
 
 ## Routing table
 | Task | Read | Skip | Skill |

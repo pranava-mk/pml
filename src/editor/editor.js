@@ -558,10 +558,12 @@
   $('#pml-undo').addEventListener('click', undo);
   $('#pml-redo').addEventListener('click', redo);
 
+  // Hosts (e.g. the browser playground) may override navigation.
+  const NAV = window.__PML_NAV__ || ((u) => (location.href = u));
   const nav = (delta) => {
     const next = CFG.slides[CFG.index + delta];
     if (!next) return;
-    location.href = BASE + '/edit/' + encodeURIComponent(next);
+    NAV(BASE + '/edit/' + encodeURIComponent(next));
   };
   $('#pml-prev').addEventListener('click', () => nav(-1));
   $('#pml-next').addEventListener('click', () => nav(1));
@@ -768,7 +770,7 @@
     'File changed on disk. <button data-pml-ui id="pml-reload-yes">Reload</button><button data-pml-ui id="pml-reload-no">Keep my edits</button>');
   reloadBar.style.display = 'none';
   document.body.appendChild(reloadBar);
-  $('#pml-reload-yes').addEventListener('click', () => { dirty = false; location.reload(); });
+  $('#pml-reload-yes').addEventListener('click', () => { dirty = false; (window.__PML_RELOAD__ || (() => location.reload()))(); });
   $('#pml-reload-no').addEventListener('click', () => (reloadBar.style.display = 'none'));
 
   new EventSource('/events').onmessage = (e) => {

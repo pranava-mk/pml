@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pml — app</title>
+<meta name="description" content="pml in your browser — create, edit and present HTML decks. Decks are stored locally in this browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c6cff'/%3E%3Cstop offset='1' stop-color='%23ff6ec7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='14' fill='url(%23g)'/%3E%3Ctext x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%230a0a0f'%3Ep%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #16161f;
+    --line: #26263a;
+    --text: #eeeef4;
+    --muted: #8b8ba3;
+    --accent: #7c6cff;
+    --accent-2: #ff6ec7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(124, 108, 255, 0.16), transparent 60%),
+      radial-gradient(900px 500px at 10% 110%, rgba(255, 110, 199, 0.10), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background: rgba(10, 10, 15, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 5;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    padding: 6px 12px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0a0a0f;
+    text-decoration: none;
+  }
+  .back { color: var(--muted); text-decoration: none; font-size: 26px; padding: 2px 10px; border-radius: 8px; }
+  .back:hover { color: var(--text); background: var(--panel); }
+  h1 { font-size: 19px; font-weight: 600; margin: 0; border-radius: 8px; padding: 3px 10px; min-width: 40px; }
+  h1[contenteditable]:hover { background: var(--panel); cursor: text; }
+  h1[contenteditable]:focus { background: var(--panel); outline: 2px solid var(--accent); }
+  .topbar nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 13px; }
+  .btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    color: var(--text);
+    background: transparent;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform 0.18s, border-color 0.18s, filter 0.18s;
+  }
+  .btn:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: none; color: #0a0a0f; font-weight: 700; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+    padding: 30px;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    transition: transform 0.18s, border-color 0.18s, box-shadow 0.18s;
+  }
+  .card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 14px 40px rgba(124, 108, 255, 0.18); }
+  .thumb-link { display: block; cursor: pointer; }
+  .thumb { aspect-ratio: 16 / 9; overflow: hidden; position: relative; background: #000; }
+  .thumb iframe { width: 1280px; height: 720px; border: 0; transform-origin: top left; pointer-events: none; position: absolute; top: 0; left: 0; }
+  .card-meta { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 14px; }
+  .card-meta .num { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 12px; }
+  .name { color: var(--muted); }
+  .name.big { color: var(--text); font-weight: 600; font-size: 15px; }
+  .name.rename { cursor: text; border-radius: 6px; padding: 2px 8px; }
+  .name.rename:hover { background: rgba(124, 108, 255, 0.12); color: var(--text); }
+  .rename-input { background: var(--bg); border: 1px solid var(--accent); color: var(--text); border-radius: 6px; padding: 2px 8px; font: inherit; width: 140px; }
+  .card-actions { margin-left: auto; display: flex; gap: 6px; opacity: 0; transition: opacity 0.15s; }
+  .card:hover .card-actions, .card-actions.always { opacity: 1; }
+  .icon-btn {
+    background: rgba(10, 10, 16, 0.7);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    border-radius: 9px;
+    padding: 7px 13px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    text-decoration: none;
+    transition: transform 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--accent); }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn.danger:hover, .icon-btn.confirm { color: #ff5c5c; border-color: #ff5c5c; }
+  .new-card {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 8px;
+    min-height: 220px;
+    cursor: pointer;
+    color: var(--muted);
+    font: 500 15px 'Space Grotesk', system-ui, sans-serif;
+    border-style: dashed;
+    background: transparent;
+  }
+  .new-card span { font-size: 34px; color: var(--accent); }
+  .new-card:hover { color: var(--text); }
+  .banner {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(124, 108, 255, 0.06);
+  }
+  .banner a { color: var(--accent); text-decoration: none; }
+  .footer-tools { text-align: center; padding: 30px; color: var(--muted); font-size: 12.5px; }
+  .footer-tools button { background: none; border: none; color: var(--muted); cursor: pointer; text-decoration: underline; font: inherit; }
+
+  /* full-screen views (editor / present) */
+  #frame-view { position: fixed; inset: 0; z-index: 20; background: #0b0b12; display: none; }
+  #frame-view iframe { width: 100%; height: 100%; border: 0; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  .modal { position: fixed; inset: 0; background: rgba(5, 5, 10, 0.7); backdrop-filter: blur(6px); display: grid; place-items: center; z-index: 100; }
+  .modal[hidden] { display: none; }
+  .modal-box {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    padding: 30px 34px; width: min(420px, 92vw); display: flex; flex-direction: column; gap: 18px;
+  }
+  .modal-box h2 { margin: 0; font-size: 22px; }
+  .modal-box input { background: var(--bg); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 14px 16px; font: 15px 'Space Grotesk', sans-serif; }
+  .modal-box input:focus { border-color: var(--accent); outline: none; }
+  .modal-box .row { display: flex; justify-content: flex-end; gap: 10px; }
+  @media (max-width: 720px) {
+    .topbar { padding: 14px 16px; }
+    .grid { padding: 16px; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+<div class="banner">⚡ Browser playground — decks are saved in <b>this browser</b> (localStorage). For the git-native workflow with live AI editing, <a href="https://github.com/pranava-mk/pml" target="_blank" rel="noopener">install pml locally</a>.</div>
+<div id="view"></div>
+<div id="frame-view"></div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <h2>New deck</h2>
+    <input id="deck-name" placeholder="Deck name (e.g. Q3 Review)" autocomplete="off">
+    <div class="row"><button class="btn" id="modal-cancel">Cancel</button><button class="btn primary" id="modal-create">Create</button></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const LS_KEY = 'pml-decks-v1';
+
+  // ---------- starter template (mirrors templates/deck/) ----------
+  const STARTER_THEME = `@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bricolage+Grotesque:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+:root { --bg:#0b0b12; --surface:#14141f; --line:#26263a; --text:#f2f2f7; --muted:#9a9ab2; --accent:#7c6cff; --accent-2:#ff6ec7; }
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; display:grid; place-items:center; background:#08080c; }
+.slide { width:1280px; height:720px; position:relative; overflow:hidden; padding:80px 96px;
+  background: radial-gradient(900px 500px at 85% -10%, rgba(124,108,255,.18), transparent 60%),
+              radial-gradient(700px 400px at 0% 110%, rgba(255,110,199,.10), transparent 60%), var(--bg);
+  color:var(--text); font-family:'Space Grotesk',system-ui,sans-serif; display:flex; flex-direction:column; justify-content:center; }
+.kicker { font-family:'JetBrains Mono',monospace; font-size:15px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); margin:0 0 18px; }
+h1.title { font-family:'Bricolage Grotesque',sans-serif; font-size:88px; font-weight:800; line-height:1.02; margin:0 0 24px; letter-spacing:-.02em; }
+h2.heading { font-family:'Bricolage Grotesque',sans-serif; font-size:54px; font-weight:800; margin:0 0 32px; }
+.subtitle { font-size:26px; color:var(--muted); margin:0; line-height:1.5; }
+.accent { background:linear-gradient(100deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.bullets { font-size:26px; line-height:2; margin:0; padding-left:28px; }
+.bullets li::marker { color:var(--accent); }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:28px 32px; }
+.card h3 { margin:0 0 10px; font-size:24px; }
+.card p { margin:0; color:var(--muted); font-size:18px; line-height:1.6; }
+.footer { position:absolute; bottom:36px; left:96px; right:96px; display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--muted); }
+code, .mono { font-family:'JetBrains Mono',monospace; }
+[class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
+.fx-fade-in{animation-name:pmlFadeIn}.fx-fade-up{animation-name:pmlFadeUp}.fx-zoom-in{animation-name:pmlZoomIn}
+.fx-slide-left{animation-name:pmlSlideLeft}.fx-slide-right{animation-name:pmlSlideRight}.fx-blur-in{animation-name:pmlBlurIn}
+@keyframes pmlFadeIn{from{opacity:0}}@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
+@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
+@media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}`;
+
+  const slideDoc = (title, body) => `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>${title}</title>
+<link rel="stylesheet" href="../theme.css">
+</head>
+<body>
+<div class="slide">
+${body}
+</div>
+</body>
+</html>
+`;
+
+  const STARTER_SLIDES = [
+    { name: '01-title.html', html: slideDoc('Title', `  <p class="kicker fx-fade-in">Your kicker line</p>
+  <h1 class="title fx-fade-up">A deck that lives<br>in <span class="accent">plain HTML</span></h1>
+  <p class="subtitle fx-fade-up" style="--fx-delay:0.25s">Double-click any text to edit it. Drag things around. Hit the ✨ effects.</p>
+  <div class="footer"><span>my-deck</span><span>01</span></div>`) },
+    { name: '02-content.html', html: slideDoc('Content', `  <h2 class="heading">A content slide</h2>
+  <div class="grid-2">
+    <ul class="bullets">
+      <li>Click any element, restyle it</li>
+      <li>＋ Insert adds text, cards, images</li>
+      <li>Ctrl+S saves — everything stays in your browser</li>
+    </ul>
+    <div class="card">
+      <h3>Cards work too</h3>
+      <p>Duplicate this card from the toolbar, or delete it and build your own layout.</p>
+    </div>
+  </div>
+  <div class="footer"><span>my-deck</span><span>02</span></div>`) },
+    { name: '03-closing.html', html: slideDoc('Closing', `  <h1 class="title" style="text-align:center"><span class="accent">Thank you</span></h1>
+  <p class="subtitle" style="text-align:center">Export this deck as a single HTML file from the overview.</p>
+  <div class="footer"><span>my-deck</span><span>03</span></div>`) },
+  ];
+
+  // ---------- state ----------
+  const load = () => {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || { decks: {} }; }
+    catch { return { decks: {} }; }
+  };
+  const state = load();
+  const persist = () => localStorage.setItem(LS_KEY, JSON.stringify(state));
+  const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'deck';
+
+  if (!Object.keys(state.decks).length) {
+    state.decks['my-first-deck'] = {
+      title: 'My first deck',
+      transition: 'slide',
+      theme: STARTER_THEME,
+      slides: STARTER_SLIDES.map((s) => ({ ...s })),
+      comments: { nextId: 1, comments: [] },
+      assets: {},
+    };
+    persist();
+  }
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  // Inline theme + assets into a slide doc for rendering in srcdoc iframes.
+  const renderable = (deck, html, runtimeTagged = false) => {
+    const styleTag = runtimeTagged ? '<style data-pml-runtime>' : '<style>';
+    let out = html.replace(/<link[^>]*href=["'][^"']*theme\.css["'][^>]*>/i, (m) =>
+      runtimeTagged ? m + '\n' + styleTag + deck.theme + '</style>' : styleTag + deck.theme + '</style>');
+    out = out.replace(/(?:\.\.\/)?assets\/([a-zA-Z0-9._-]+)/g, (m, name) => deck.assets?.[name] || m);
+    return out;
+  };
+
+  const nextSlideName = (deck, slug = 'slide') => {
+    const nums = deck.slides.map((s) => parseInt(s.name) || 0);
+    return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(2, '0') + '-' + slug + '.html';
+  };
+
+  // ---------- routing ----------
+  const view = document.getElementById('view');
+  const frameView = document.getElementById('frame-view');
+
+  const route = () => {
+    const h = location.hash.slice(1) || '/';
+    const mEdit = h.match(/^\/d\/([^/]+)\/edit\/(.+)$/);
+    const mPresent = h.match(/^\/d\/([^/]+)\/present(?:\?slide=(.+))?$/);
+    const mDeck = h.match(/^\/d\/([^/]+)$/);
+    frameView.style.display = 'none';
+    frameView.innerHTML = '';
+    document.body.style.overflow = '';
+    if (mEdit && state.decks[mEdit[1]]) return renderEditor(mEdit[1], decodeURIComponent(mEdit[2]));
+    if (mPresent && state.decks[mPresent[1]]) return renderPresent(mPresent[1], mPresent[2] ? decodeURIComponent(mPresent[2]) : null);
+    if (mDeck && state.decks[mDeck[1]]) return renderOverview(mDeck[1]);
+    renderHub();
+  };
+  addEventListener('hashchange', route);
+
+  const fitThumbs = () => {
+    document.querySelectorAll('.thumb').forEach((t) => {
+      const f = t.querySelector('iframe');
+      if (f) f.style.transform = 'scale(' + t.clientWidth / 1280 + ')';
+    });
+  };
+  addEventListener('resize', fitThumbs);
+
+  // ---------- hub ----------
+  function renderHub() {
+    const cards = Object.entries(state.decks).map(([slug, d]) => `
+      <div class="card" data-slug="${esc(slug)}">
+        <a class="thumb-link" href="#/d/${encodeURIComponent(slug)}" aria-label="Open ${esc(d.title)}">
+          <div class="thumb">${d.slides[0] ? `<iframe sandbox="allow-same-origin" tabindex="-1" scrolling="no"></iframe>` : ''}</div>
+        </a>
+        <div class="card-meta">
+          <span class="name big">${esc(d.title)}</span>
+          <span class="hint">${d.slides.length} slide${d.slides.length === 1 ? '' : 's'}</span>
+          <span class="card-actions always">
+            <a class="icon-btn" href="#/d/${encodeURIComponent(slug)}/present" title="Present" aria-label="Present">▶</a>
+            <button class="icon-btn" data-export="${esc(slug)}" title="Export single file" aria-label="Export">⇩</button>
+            <button class="icon-btn danger" data-del="${esc(slug)}" title="Delete deck" aria-label="Delete deck">✕</button>
+          </span>
+        </div>
+      </div>`).join('');
+    view.innerHTML = `
+      <header class="topbar">
+        <div class="brand"><a class="logo" href="/">pml</a><h1>Your decks</h1></div>
+        <nav><span class="hint">stored in this browser</span></nav>
+      </header>
+      <main class="grid">${cards}
+        <button class="card new-card" id="new-deck" aria-label="Create new deck"><span>＋</span>New deck</button>
+      </main>
+      <div class="footer-tools">playground data: <button id="reset-all">reset everything</button></div>`;
+    // thumbs
+    view.querySelectorAll('.card[data-slug]').forEach((card) => {
+      const d = state.decks[card.dataset.slug];
+      const f = card.querySelector('iframe');
+      if (f && d.slides[0]) f.srcdoc = renderable(d, d.slides[0].html);
+    });
+    fitThumbs();
+    document.getElementById('new-deck').addEventListener('click', () => openModal());
+    view.querySelectorAll('[data-del]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (!b.classList.contains('confirm')) {
+          b.classList.add('confirm'); b.textContent = 'sure?';
+          setTimeout(() => { b.classList.remove('confirm'); b.textContent = '✕'; }, 2500);
+          return;
+        }
+        delete state.decks[b.dataset.del];
+        persist(); route();
+      })
+    );
+    view.querySelectorAll('[data-export]').forEach((b) =>
+      b.addEventListener('click', () => exportDeck(b.dataset.export))
+    );
+    document.getElementById('reset-all').addEventListener('click', () => {
+      localStorage.removeItem(LS_KEY); location.reload();
+    });
+  }
+
+  // ---------- overview ----------
+  function renderOverview(slug) {
+    const d = state.decks[slug];
+    const cards = d.slides.map((s, i) => `
+      <div class="card" data-file="${esc(s.name)}">
+        <a class="thumb-link" href="#/d/${encodeURIComponent(slug)}/edit/${encodeURIComponent(s.name)}" aria-label="Edit slide ${i + 1}">
+          <div class="thumb"><iframe sandbox="allow-same-origin" tabindex="-1" scrolling="no"></iframe></div>
+        </a>
+        <div class="card-meta">
+          <span class="num">${String(i + 1).padStart(2, '0')}</span>
+          <span class="name rename" title="Click to rename" role="button" tabindex="0">${esc(s.name.replace(/^\d+-/, '').replace(/\.html$/, ''))}</span>
+          <span class="card-actions">
+            <button class="icon-btn" data-dup="${esc(s.name)}" title="Duplicate" aria-label="Duplicate slide">⧉</button>
+            <button class="icon-btn danger" data-del="${esc(s.name)}" title="Delete" aria-label="Delete slide">✕</button>
+          </span>
+        </div>
+      </div>`).join('');
+    view.innerHTML = `
+      <header class="topbar">
+        <div class="brand">
+          <a class="back" href="#/" aria-label="All decks">‹</a>
+          <a class="logo" href="/">pml</a>
+          <h1 id="deck-title" contenteditable="true" spellcheck="false" title="Click to edit deck title">${esc(d.title)}</h1>
+        </div>
+        <nav>
+          <span class="hint">click a slide to edit · click its name to rename</span>
+          <button class="btn" id="export-deck" title="Download as one self-contained HTML file">⇩ Export</button>
+          <a class="btn primary" href="#/d/${encodeURIComponent(slug)}/present">▶ Present</a>
+        </nav>
+      </header>
+      <main class="grid">${cards}
+        <button class="card new-card" id="new-slide" aria-label="Add new slide"><span>＋</span>New slide</button>
+      </main>`;
+    view.querySelectorAll('.card[data-file]').forEach((card) => {
+      const s = d.slides.find((x) => x.name === card.dataset.file);
+      card.querySelector('iframe').srcdoc = renderable(d, s.html);
+    });
+    fitThumbs();
+    document.getElementById('new-slide').addEventListener('click', () => {
+      d.slides.push({ name: nextSlideName(d), html: slideDoc('New slide', `  <p class="kicker">Section</p>
+  <h2 class="heading">New slide</h2>
+  <p class="subtitle">Double-click to edit, or use ＋ Insert in the toolbar.</p>`) });
+      persist(); route();
+    });
+    view.querySelectorAll('[data-dup]').forEach((b) =>
+      b.addEventListener('click', () => {
+        const s = d.slides.find((x) => x.name === b.dataset.dup);
+        d.slides.push({ name: nextSlideName(d, b.dataset.dup.replace(/^\d+-/, '').replace(/\.html$/, '') + '-copy'), html: s.html });
+        persist(); route();
+      })
+    );
+    view.querySelectorAll('[data-del]').forEach((b) =>
+      b.addEventListener('click', () => {
+        if (!b.classList.contains('confirm')) {
+          b.classList.add('confirm'); b.textContent = 'sure?';
+          setTimeout(() => { b.classList.remove('confirm'); b.textContent = '✕'; }, 2500);
+          return;
+        }
+        d.slides = d.slides.filter((x) => x.name !== b.dataset.del);
+        persist(); route();
+      })
+    );
+    view.querySelectorAll('.name.rename').forEach((span) => {
+      const start = () => {
+        const card = span.closest('.card');
+        const input = document.createElement('input');
+        input.value = span.textContent;
+        input.className = 'rename-input';
+        span.replaceWith(input);
+        input.focus(); input.select();
+        const done = (commit) => {
+          const s = d.slides.find((x) => x.name === card.dataset.file);
+          const val = input.value.trim();
+          if (commit && val && s) {
+            const prefix = (s.name.match(/^(\d+)-/) || [, '01'])[1];
+            const fname = prefix + '-' + slugify(val) + '.html';
+            if (!d.slides.some((x) => x.name === fname && x !== s)) s.name = fname;
+            persist(); route();
+          } else input.replaceWith(span);
+        };
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(true); if (e.key === 'Escape') done(false); });
+        input.addEventListener('blur', () => done(true));
+      };
+      span.addEventListener('click', start);
+      span.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(); });
+    });
+    const titleEl = document.getElementById('deck-title');
+    titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
+    titleEl.addEventListener('blur', () => { d.title = titleEl.textContent.trim() || d.title; persist(); });
+    document.getElementById('export-deck').addEventListener('click', () => exportDeck(slug));
+  }
+
+  // ---------- editor ----------
+  let activeDeck = null;
+  function renderEditor(slug, file) {
+    const d = state.decks[slug];
+    const s = d.slides.find((x) => x.name === file);
+    if (!s) { location.hash = '#/d/' + slug; return; }
+    activeDeck = slug;
+    view.innerHTML = '';
+    frameView.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    const cfg = { file, slides: d.slides.map((x) => x.name), index: d.slides.findIndex((x) => x.name === file), base: '', evPrefix: '' };
+    const bootstrap = `
+<script data-pml-runtime>
+  window.__PML__ = ${JSON.stringify(cfg)};
+  // bridge API calls to the playground host
+  const realFetch = window.fetch.bind(window);
+  window.fetch = (url, opts = {}) => {
+    if (typeof url === 'string' && url.startsWith('/api/')) {
+      return new Promise((resolve) => {
+        const ch = new MessageChannel();
+        ch.port1.onmessage = (e) => resolve(new Response(JSON.stringify(e.data.body), { status: e.data.status, headers: { 'Content-Type': 'application/json' } }));
+        parent.postMessage({ t: 'api', url, method: opts.method || 'GET', body: opts.body || null }, '*', [ch.port2]);
+      });
+    }
+    return realFetch(url, opts);
+  };
+  window.EventSource = class { constructor() {} close() {} addEventListener() {} };
+  window.__PML_NAV__ = (u) => parent.postMessage({ t: 'nav', href: u }, '*');
+  window.__PML_RELOAD__ = () => parent.postMessage({ t: 'nav', href: location.href }, '*');
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a[href]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+    e.preventDefault();
+    parent.postMessage({ t: 'nav', href: a.getAttribute('href') }, '*');
+  }, true);
+<\/script>
+<link rel="stylesheet" href="/app/editor.css" data-pml-runtime>
+<script src="/app/editor.js" defer data-pml-runtime><\/script>`;
+    let html = renderable(d, s.html, true);
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, bootstrap + '</body>') : html + bootstrap;
+    const iframe = document.createElement('iframe');
+    iframe.srcdoc = html;
+    frameView.appendChild(iframe);
+  }
+
+  // API bridge (save / comments / upload) for the active deck
+  addEventListener('message', (e) => {
+    const msg = e.data || {};
+    if (msg.t === 'nav') {
+      const href = String(msg.href || '/');
+      if (href === '/' || href === '') location.hash = '#/d/' + activeDeck;
+      else if (href.startsWith('/present')) {
+        const q = new URLSearchParams(href.split('?')[1] || '');
+        location.hash = '#/d/' + activeDeck + '/present' + (q.get('slide') ? '?slide=' + encodeURIComponent(q.get('slide')) : '');
+      } else if (href.startsWith('/edit/')) location.hash = '#/d/' + activeDeck + '/edit/' + href.slice('/edit/'.length);
+      else location.hash = '#/d/' + activeDeck;
+      return;
+    }
+    if (msg.t !== 'api' || !e.ports[0]) return;
+    const reply = (status, body) => e.ports[0].postMessage({ status, body });
+    const d = state.decks[activeDeck];
+    if (!d) return reply(500, { error: 'no active deck' });
+    const body = msg.body ? JSON.parse(msg.body) : {};
+    const url = new URL(msg.url, location.origin);
+    const p = url.pathname;
+    if (p === '/api/save' && msg.method === 'POST') {
+      const s = d.slides.find((x) => x.name === body.file);
+      if (!s) return reply(400, { error: 'bad file' });
+      s.html = body.html;
+      persist();
+      return reply(200, { ok: true });
+    }
+    if (p === '/api/upload' && msg.method === 'POST') {
+      const safe = String(body.name || 'image').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-80);
+      const fname = Date.now() + '-' + safe;
+      d.assets = d.assets || {};
+      d.assets[fname] = body.data;
+      persist();
+      return reply(200, { ok: true, path: 'assets/' + fname });
+    }
+    if (p === '/api/comments' && msg.method === 'GET') {
+      const f = url.searchParams.get('file');
+      return reply(200, { comments: d.comments.comments.filter((c) => !f || c.file === f) });
+    }
+    if (p === '/api/comments' && msg.method === 'POST') {
+      const c = { id: d.comments.nextId++, file: body.file, x: body.x, y: body.y, author: body.author || 'anon', text: body.text || '', resolved: false, ts: Date.now(), replies: [] };
+      d.comments.comments.push(c);
+      persist();
+      return reply(200, { ok: true, comment: c });
+    }
+    const ca = p.match(/^\/api\/comments\/(\d+)\/(resolve|reply)$/);
+    if (ca && msg.method === 'POST') {
+      const c = d.comments.comments.find((x) => x.id === Number(ca[1]));
+      if (!c) return reply(404, { error: 'not found' });
+      if (ca[2] === 'resolve') c.resolved = !c.resolved;
+      else c.replies.push({ author: body.author || 'anon', text: body.text || '', ts: Date.now() });
+      persist();
+      return reply(200, { ok: true, comment: c });
+    }
+    reply(404, { error: 'not found' });
+  });
+
+  // ---------- present ----------
+  function renderPresent(slug, startSlide) {
+    const d = state.decks[slug];
+    activeDeck = slug;
+    view.innerHTML = '';
+    frameView.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    frameView.innerHTML = '<div style="position:fixed;inset:0;background:#000"><div id="holder" style="position:absolute;top:50%;left:50%;width:1280px;height:720px"></div>' +
+      '<div id="hud" style="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);color:#eee;background:rgba(20,20,30,.85);border:1px solid #333;border-radius:999px;padding:8px 18px;font-size:13px;font-family:Space Grotesk,sans-serif"><span id="c"></span> · ← → · Esc back</div></div>';
+    const holder = document.getElementById('holder');
+    let idx = Math.max(0, d.slides.findIndex((x) => x.name === startSlide));
+    const fit = () => { const sc = Math.min(innerWidth / 1280, innerHeight / 720); holder.style.transform = 'translate(-50%,-50%) scale(' + sc + ')'; };
+    const show = () => {
+      const old = holder.querySelector('iframe');
+      const f = document.createElement('iframe');
+      f.style.cssText = 'width:1280px;height:720px;border:0;position:absolute;inset:0;transition:opacity .35s ease;background:#000;opacity:0';
+      f.srcdoc = renderable(d, d.slides[idx].html);
+      holder.appendChild(f);
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        f.style.opacity = '1';
+        if (old) { old.style.opacity = '0'; setTimeout(() => old.remove(), 380); }
+      }));
+      document.getElementById('c').textContent = (idx + 1) + ' / ' + d.slides.length;
+    };
+    const onKey = (e) => {
+      if ((e.key === 'ArrowRight' || e.key === ' ') && idx < d.slides.length - 1) { idx++; show(); }
+      else if (e.key === 'ArrowLeft' && idx > 0) { idx--; show(); }
+      else if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
+      else if (e.key === 'Escape') { removeEventListener('keydown', onKey); location.hash = '#/d/' + slug; }
+    };
+    addEventListener('keydown', onKey);
+    let tx = null;
+    frameView.addEventListener('touchstart', (e) => (tx = e.touches[0].clientX), { passive: true });
+    frameView.addEventListener('touchend', (e) => {
+      if (tx === null) return;
+      const dx = e.changedTouches[0].clientX - tx; tx = null;
+      if (dx < -50 && idx < d.slides.length - 1) { idx++; show(); }
+      else if (dx > 50 && idx > 0) { idx--; show(); }
+    }, { passive: true });
+    addEventListener('resize', fit);
+    fit(); show();
+  }
+
+  // ---------- export ----------
+  function exportDeck(slug) {
+    const d = state.decks[slug];
+    const slides = d.slides.map((s) => renderable(d, s.html));
+    const doc = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>${esc(d.title)}</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden;font-family:system-ui,sans-serif}
+#holder{position:absolute;top:50%;left:50%;width:1280px;height:720px}
+iframe{width:1280px;height:720px;border:0;position:absolute;inset:0;transition:opacity .35s ease;background:#000}
+#hud{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);color:#eee;background:rgba(20,20,30,.85);border:1px solid #333;border-radius:999px;padding:7px 16px;font-size:13px;opacity:0;transition:opacity .25s}
+body:hover #hud{opacity:1}</style></head><body>
+<div id="holder"></div><div id="hud"><span id="c"></span> · ← → navigate · F fullscreen</div>
+<scr` + `ipt>
+const slides=${JSON.stringify(slides).replace(/<\/script/gi, '<\\/script')};let idx=0;
+const holder=document.getElementById('holder');
+function fit(){const s=Math.min(innerWidth/1280,innerHeight/720);holder.style.transform='translate(-50%,-50%) scale('+s+')';}
+function show(){const old=holder.querySelector('iframe');const f=document.createElement('iframe');f.style.opacity='0';f.srcdoc=slides[idx];holder.appendChild(f);
+requestAnimationFrame(()=>requestAnimationFrame(()=>{f.style.opacity='1';if(old){old.style.opacity='0';setTimeout(()=>old.remove(),380);}}));
+document.getElementById('c').textContent=(idx+1)+' / '+slides.length;}
+function nav(d){if(d>0&&idx<slides.length-1){idx++;show();}else if(d<0&&idx>0){idx--;show();}}
+addEventListener('keydown',(e)=>{if(e.key==='ArrowRight'||e.key===' ')nav(1);else if(e.key==='ArrowLeft')nav(-1);else if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen?.();});
+let tx=null;addEventListener('touchstart',(e)=>tx=e.touches[0].clientX,{passive:true});
+addEventListener('touchend',(e)=>{if(tx===null)return;const dx=e.changedTouches[0].clientX-tx;tx=null;if(Math.abs(dx)>50)nav(dx<0?1:-1);},{passive:true});
+addEventListener('resize',fit);fit();show();
+</scr` + `ipt></body></html>`;
+    const blob = new Blob([doc], { type: 'text/html' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (d.title.replace(/[^\w -]/g, '') || 'deck') + '.html';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+
+  // ---------- new deck modal ----------
+  const modal = document.getElementById('modal');
+  const nameIn = document.getElementById('deck-name');
+  function openModal() { modal.hidden = false; nameIn.value = ''; nameIn.focus(); }
+  function createDeck() {
+    const name = nameIn.value.trim();
+    if (!name) return;
+    let slug = slugify(name);
+    while (state.decks[slug]) slug += '-2';
+    state.decks[slug] = {
+      title: name,
+      transition: 'slide',
+      theme: STARTER_THEME,
+      slides: STARTER_SLIDES.map((s) => ({ ...s })),
+      comments: { nextId: 1, comments: [] },
+      assets: {},
+    };
+    persist();
+    modal.hidden = true;
+    location.hash = '#/d/' + slug;
+  }
+  document.getElementById('modal-cancel').addEventListener('click', () => (modal.hidden = true));
+  document.getElementById('modal-create').addEventListener('click', createDeck);
+  nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') createDeck(); if (e.key === 'Escape') modal.hidden = true; });
+
+  route();
+})();
+</script>
+</body>
+</html>

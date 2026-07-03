@@ -9,7 +9,8 @@
   "scripts": {
     "start": "node bin/pml.js serve examples",
     "demo": "node bin/pml.js serve examples",
-    "demo:deck": "node bin/pml.js serve examples/launch"
+    "demo:deck": "node bin/pml.js serve examples/launch",
+    "sync-app": "cp src/editor/editor.js src/editor/editor.css site/app/"
   },
   "engines": {
     "node": ">=20"

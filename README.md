@@ -10,6 +10,9 @@ cd my-deck && node ../bin/pml.js serve
 
 Or try the showcase hub with three example decks: `npm run demo`
 
+**Zero install:** the hosted browser playground at `/app/` on the site runs the
+full editor with decks stored in your browser.
+
 Point `pml serve` at one deck **or at a folder of decks** — the folder gives you
 a hub page to browse, create and present decks. No AI required anywhere:
 everything (create deck, add/rename/reorder slides, restyle, comment, export)

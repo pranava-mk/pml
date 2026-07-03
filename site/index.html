@@ -24,6 +24,21 @@
   }
   * { box-sizing: border-box; margin: 0; }
   html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  :root { --pw: 100vw; --ph: 100dvh; }
+  /* Phone portrait (touch only): rotate the whole experience 90° so the deck
+     is viewed landscape. At orientation:landscape (OS auto-rotate) this media
+     query stops matching and the transform drops — never rotated twice. */
+  @media (max-width: 860px) and (orientation: portrait) and (pointer: coarse) {
+    #app {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100dvh;
+      height: 100dvw;
+      transform: rotate(90deg) translateY(-100%);
+      transform-origin: top left;
+    }
+  }
   body {
     background: var(--bg);
     color: var(--text);
@@ -96,6 +111,13 @@
     transition: 0.2s;
   }
   .gh:hover { color: var(--text); border-color: var(--accent); }
+  .gh.app-link {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #0a0a0f;
+    border: none;
+    font-weight: 700;
+  }
+  .gh.app-link:hover { filter: brightness(1.12); color: #0a0a0f; }
 
   #progress {
     position: fixed;
@@ -175,11 +197,11 @@
   }
 
   /* ---------- horizontal deck ---------- */
-  #track-wrap { overflow: hidden; height: 100dvh; }
+  #track-wrap { overflow: hidden; height: var(--ph); }
   #track { display: flex; width: max-content; height: 100%; will-change: transform; }
   .panel {
-    width: 100vw;
-    height: 100dvh;
+    width: var(--pw);
+    height: var(--ph);
     flex: none;
     display: grid;
     place-items: center;
@@ -495,7 +517,7 @@
     #main-nav { display: none; }
     header { padding: 14px 18px; }
     .panel { padding: 80px 6vw 90px; }
-    .panel-inner { max-height: calc(100dvh - 170px); overflow-y: auto; scrollbar-width: none; }
+    .panel-inner { max-height: calc(var(--ph) - 170px); overflow-y: auto; scrollbar-width: none; }
     .panel-inner::-webkit-scrollbar { display: none; }
     .split, .vs { grid-template-columns: 1fr; gap: 22px; }
     .vs-mid { display: none; }
@@ -515,6 +537,7 @@
 </style>
 </head>
 <body>
+<div id="app">
 
 <div id="progress"></div>
 <div id="cursor-glow"></div>
@@ -530,7 +553,10 @@
     <button data-goto="4">AI</button>
     <button data-goto="5">Get started</button>
   </nav>
-  <a class="gh" href="https://github.com/pranava-mk/pml" target="_blank" rel="noopener">GitHub ↗</a>
+  <span style="display:flex;gap:10px;align-items:center">
+    <a class="gh" href="https://github.com/pranava-mk/pml" target="_blank" rel="noopener">GitHub ↗</a>
+    <a class="gh app-link" href="/app/">Open app →</a>
+  </span>
 </header>
 
 <div id="track-wrap">
@@ -544,7 +570,7 @@
       <h1 class="display" data-stagger>Presentations<br>are <span class="grad">just files.</span></h1>
       <p class="sub" data-stagger>Plain HTML slides with visual editing, comments and live reload. Replace PPTX with files you own — with or without an AI assistant.</p>
       <div class="cta-row" data-stagger>
-        <a class="btn primary magnetic" href="https://github.com/pranava-mk/pml" target="_blank" rel="noopener">Get started</a>
+        <a class="btn primary magnetic" href="/app/">Try it in your browser</a>
         <a class="btn ghost magnetic" href="#" data-goto="2">See how it works →</a>
       </div>
     </div>
@@ -671,6 +697,7 @@
     <span class="num">06 / 06</span>
     <div class="panel-inner">
       <h2 class="display" data-stagger>Start in<br><span class="grad">ten seconds.</span></h2>
+      <p class="sub" data-stagger style="color:var(--muted);font-size:17px;margin-bottom:26px">Zero-install in the browser above, or go git-native locally:</p>
       <div class="install" data-stagger>
         <button id="copy-install" title="Copy commands" aria-label="Copy install commands">⧉ copy</button>
         <div><span class="p">$</span> git clone https://github.com/pranava-mk/pml</div>
@@ -678,7 +705,8 @@
         <div><span class="p">$</span> node pml/bin/pml.js serve my-deck <span class="dim"># → localhost:4321</span></div>
       </div>
       <div class="cta-row" style="justify-content:center" data-stagger>
-        <a class="btn primary magnetic" href="https://github.com/pranava-mk/pml" target="_blank" rel="noopener">Star on GitHub ★</a>
+        <a class="btn primary magnetic" href="/app/">Open the app — no install</a>
+        <a class="btn ghost magnetic" href="https://github.com/pranava-mk/pml" target="_blank" rel="noopener">Star on GitHub ★</a>
       </div>
       <span class="foot" data-stagger>MIT · zero dependencies · <b class="grad">pml</b> — presentation markup language, in plain html<br>this page is a presentation, obviously — use ← → or swipe</span>
     </div>
@@ -689,6 +717,7 @@
 
 <nav id="dots" aria-label="Slides"></nav>
 <div class="key-hint">← → · swipe</div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
 <script>
@@ -700,6 +729,17 @@
   let idx = 0;
   let locked = false;
   const visited = new Set();
+
+  // Rotated phone-portrait mode: deck width = physical viewport HEIGHT.
+  const rotatedMQ = matchMedia('(max-width: 860px) and (orientation: portrait) and (pointer: coarse)');
+  const isRot = () => rotatedMQ.matches;
+  const PW = () => (isRot() ? innerHeight : innerWidth);
+  const applyDims = () => {
+    const ph = isRot() ? innerWidth : innerHeight;
+    document.documentElement.style.setProperty('--pw', PW() + 'px');
+    document.documentElement.style.setProperty('--ph', ph + 'px');
+    gsap.set(track, { x: -idx * PW() });
+  };
 
   // ---------- slide engine: hard snap, one gesture = one slide ----------
 
@@ -736,7 +776,7 @@
     syncChrome();
     enterPanel(i);
     gsap.to(track, {
-      x: -i * innerWidth,
+      x: -i * PW(),
       duration: reduced ? 0 : 0.75,
       ease: 'power3.inOut',
       onComplete: () => { locked = false; },
@@ -745,7 +785,9 @@
     setTimeout(() => { locked = false; }, 900);
   }
 
-  addEventListener('resize', () => gsap.set(track, { x: -idx * innerWidth }));
+  addEventListener('resize', applyDims);
+  rotatedMQ.addEventListener?.('change', applyDims);
+  applyDims();
 
   // wheel: one notch-burst = one slide
   let wheelAcc = 0, wheelTimer = null;
@@ -769,9 +811,11 @@
   }, { passive: true });
   addEventListener('touchend', (e) => {
     if (touchX === null) return;
-    const dx = e.changedTouches[0].clientX - touchX;
-    const dy = e.changedTouches[0].clientY - touchY;
+    let dx = e.changedTouches[0].clientX - touchX;
+    let dy = e.changedTouches[0].clientY - touchY;
     touchX = null;
+    // In rotated mode the deck's x-axis lies along the physical y-axis.
+    if (isRot()) [dx, dy] = [dy, dx];
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) goTo(idx + (dx < 0 ? 1 : -1));
   }, { passive: true });
 
