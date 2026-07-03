@@ -1,11 +1,11 @@
 ---
-name: pml-slides
-description: Create and edit pml presentation decks (plain HTML slides with live browser preview). Use when the user asks to make, edit, restyle, or review presentation slides in a pml deck, or mentions pml / HTML slides / deck folders with slides/*.html.
+name: lmth-slides
+description: Create and edit lmth presentation decks (plain HTML slides with live browser preview). Use when the user asks to make, edit, restyle, or review presentation slides in a lmth deck, or mentions lmth / HTML slides / deck folders with slides/*.html.
 ---
 
-# pml slides
+# lmth slides
 
-pml decks are folders of plain HTML files. A local server (`pml serve <deck>`) gives the user a live browser view with visual editing and comments. **You edit the files; the browser reloads automatically.** Never tell the user to refresh.
+lmth decks are folders of plain HTML files. A local server (`lmth serve <deck>`) gives the user a live browser view with visual editing and comments. **You edit the files; the browser reloads automatically.** Never tell the user to refresh.
 
 ## Deck layout
 
@@ -43,8 +43,8 @@ mydeck/
 
 ## Entrance effects
 
-Decks scaffolded by `pml new` define preset classes in theme.css: `fx-fade-in`, `fx-fade-up`, `fx-zoom-in`, `fx-slide-left`, `fx-slide-right`, `fx-blur-in`. Add the class to any element inside `.slide`; stagger with an inline delay: `style="--fx-delay:0.4s"`. They animate on slide load in presenter/export. If a deck's theme.css lacks them, the browser editor injects an equivalent `<style data-pml-fx>` into the slide — leave that block alone. Use effects sparingly: one or two per slide, staggered.
+Decks scaffolded by `lmth new` define preset classes in theme.css: `fx-fade-in`, `fx-fade-up`, `fx-zoom-in`, `fx-slide-left`, `fx-slide-right`, `fx-blur-in`. Add the class to any element inside `.slide`; stagger with an inline delay: `style="--fx-delay:0.4s"`. They animate on slide load in presenter/export. If a deck's theme.css lacks them, the browser editor injects an equivalent `<style data-lmth-fx>` into the slide — leave that block alone. Use effects sparingly: one or two per slide, staggered.
 
 ## Design bar
 
-Slides should look designed, not generated: strong type hierarchy (one big statement per slide), generous whitespace, consistent accent usage from `theme.css` variables, max ~5 bullets. When adding fonts, `@import` them in `theme.css`, or use a `<link data-pml-font>` tag in the slide head.
+Slides should look designed, not generated: strong type hierarchy (one big statement per slide), generous whitespace, consistent accent usage from `theme.css` variables, max ~5 bullets. When adding fonts, `@import` them in `theme.css`, or use a `<link data-lmth-font>` tag in the slide head.

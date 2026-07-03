@@ -1,17 +1,17 @@
 # Docs
 
 ## What this is for
-Product contract + decisions. SPEC_pml.md = source of truth for deck format, routes, editor behavior. Code and integration docs mirror it.
+Product contract + decisions. SPEC_lmth.md = source of truth for deck format, routes, editor behavior. Code and integration docs mirror it.
 
 ## Folder contents
 | Path | What it holds |
 |------|---------------|
-| `SPEC_pml.md` | Deck format, server routes, editor features, CLI, non-goals |
+| `SPEC_lmth.md` | Deck format, server routes, editor features, CLI, non-goals |
 
 ## Routing table
 | Task | Read | Skip | Skill |
 |------|------|------|-------|
-| Any contract question | `SPEC_pml.md` | — | — |
+| Any contract question | `SPEC_lmth.md` | — | — |
 
 ## Conventions
 - Contract change flow: SPEC first → code (`src/`) → integration mirrors (`integration/`).

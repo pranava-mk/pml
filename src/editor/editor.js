@@ -1,11 +1,11 @@
-// pml editor runtime — injected into slides on /edit/ routes.
-// Everything it adds to the document is tagged data-pml-ui (UI chrome) or
-// data-pml-runtime (injected by server) and stripped before saving.
-// Exceptions kept in saved files: link[data-pml-font], style[data-pml-fx].
+// lmth editor runtime — injected into slides on /edit/ routes.
+// Everything it adds to the document is tagged data-lmth-ui (UI chrome) or
+// data-lmth-runtime (injected by server) and stripped before saving.
+// Exceptions kept in saved files: link[data-lmth-font], style[data-lmth-fx].
 (() => {
-  const CFG = window.__PML__ || { file: '', slides: [], index: 0 };
+  const CFG = window.__LMTH__ || { file: '', slides: [], index: 0 };
   let slideEl = document.querySelector('.slide') || document.body.firstElementChild;
-  if (!slideEl) return console.warn('pml: no .slide root found');
+  if (!slideEl) return console.warn('lmth: no .slide root found');
 
   const GOOGLE_FONTS = {
     Inter: 'Inter:wght@400;500;600;700;800;900',
@@ -20,22 +20,22 @@
   const SYSTEM_FONTS = ['system-ui', 'Georgia', 'Arial', 'Courier New'];
 
   const FX_PRESETS = ['fade-in', 'fade-up', 'zoom-in', 'slide-left', 'slide-right', 'blur-in'];
-  // Self-contained: this <style data-pml-fx> is persisted into the slide file
+  // Self-contained: this <style data-lmth-fx> is persisted into the slide file
   // so effects play anywhere the file opens — presenter, export, raw browser.
   const FX_CSS = `
 [class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
-.fx-fade-in{animation-name:pmlFadeIn}
-.fx-fade-up{animation-name:pmlFadeUp}
-.fx-zoom-in{animation-name:pmlZoomIn}
-.fx-slide-left{animation-name:pmlSlideLeft}
-.fx-slide-right{animation-name:pmlSlideRight}
-.fx-blur-in{animation-name:pmlBlurIn}
-@keyframes pmlFadeIn{from{opacity:0}}
-@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}
-@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
-@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}
-@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}
-@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
+.fx-fade-in{animation-name:lmthFadeIn}
+.fx-fade-up{animation-name:lmthFadeUp}
+.fx-zoom-in{animation-name:lmthZoomIn}
+.fx-slide-left{animation-name:lmthSlideLeft}
+.fx-slide-right{animation-name:lmthSlideRight}
+.fx-blur-in{animation-name:lmthBlurIn}
+@keyframes lmthFadeIn{from{opacity:0}}
+@keyframes lmthFadeUp{from{opacity:0;translate:0 36px}}
+@keyframes lmthZoomIn{from{opacity:0;scale:.82}}
+@keyframes lmthSlideLeft{from{opacity:0;translate:60px 0}}
+@keyframes lmthSlideRight{from{opacity:0;translate:-60px 0}}
+@keyframes lmthBlurIn{from{opacity:0;filter:blur(14px)}}
 @media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}
 `;
 
@@ -55,7 +55,7 @@
     const n = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
     if (html) n.innerHTML = html;
-    n.setAttribute('data-pml-ui', '');
+    n.setAttribute('data-lmth-ui', '');
     return n;
   };
   const inTextInput = () => {
@@ -66,7 +66,7 @@
 
   const setDirty = (v) => {
     dirty = v;
-    status.className = 'pml-dot ' + (v ? 'dirty' : 'clean');
+    status.className = 'lmth-dot ' + (v ? 'dirty' : 'clean');
     status.title = v ? 'Unsaved changes' : 'Saved';
   };
 
@@ -76,7 +76,7 @@
   // Preload all pickable fonts so the dropdown previews instantly (runtime-only).
   const fontPreload = document.createElement('link');
   fontPreload.rel = 'stylesheet';
-  fontPreload.setAttribute('data-pml-runtime', '');
+  fontPreload.setAttribute('data-lmth-runtime', '');
   fontPreload.href =
     'https://fonts.googleapis.com/css2?' +
     Object.values(GOOGLE_FONTS).map((f) => 'family=' + f).join('&') +
@@ -86,18 +86,18 @@
   // Persist a font into the slide file so it renders outside the editor.
   const ensureFontLink = (family) => {
     if (!GOOGLE_FONTS[family]) return;
-    if ($(`link[data-pml-font="${family}"]`)) return;
+    if ($(`link[data-lmth-font="${family}"]`)) return;
     const l = document.createElement('link');
     l.rel = 'stylesheet';
-    l.setAttribute('data-pml-font', family);
+    l.setAttribute('data-lmth-font', family);
     l.href = 'https://fonts.googleapis.com/css2?family=' + GOOGLE_FONTS[family] + '&display=swap';
     document.head.appendChild(l);
   };
 
   const ensureFxStyle = () => {
-    if ($('style[data-pml-fx]')) return;
+    if ($('style[data-lmth-fx]')) return;
     const s = document.createElement('style');
-    s.setAttribute('data-pml-fx', '');
+    s.setAttribute('data-lmth-fx', '');
     s.textContent = FX_CSS;
     document.head.appendChild(s);
   };
@@ -109,9 +109,9 @@
 
   const cleanSlideHTML = () => {
     const c = slideEl.cloneNode(true);
-    c.querySelectorAll('[data-pml-ui]').forEach((n) => n.remove());
+    c.querySelectorAll('[data-lmth-ui]').forEach((n) => n.remove());
     c.querySelectorAll('[contenteditable]').forEach((n) => n.removeAttribute('contenteditable'));
-    c.classList.remove('pml-selected');
+    c.classList.remove('lmth-selected');
     if (!c.className) c.removeAttribute('class');
     return c.outerHTML;
   };
@@ -158,85 +158,85 @@
 
   const fit = () => {
     const s = Math.min((innerWidth - 96) / 1280, (innerHeight - 170) / 720, 1);
-    document.documentElement.style.setProperty('--pml-zoom', s);
+    document.documentElement.style.setProperty('--lmth-zoom', s);
     updateResizer();
   };
   addEventListener('resize', fit);
-  document.documentElement.classList.add('pml-editing');
+  document.documentElement.classList.add('lmth-editing');
 
   // ---------- toolbar ----------
 
-  const bar = el('div', { class: 'pml-bar' });
+  const bar = el('div', { class: 'lmth-bar' });
   bar.innerHTML = `
-    <div class="pml-group">
-      <a class="pml-btn" href="/" title="Deck overview">⌗</a>
-      <button class="pml-btn" id="pml-prev" title="Previous slide">‹</button>
-      <span class="pml-fname">${escapeHtml(CFG.file)}</span>
-      <button class="pml-btn" id="pml-next" title="Next slide">›</button>
-      <a class="pml-btn" href="/present?slide=${encodeURIComponent(CFG.file)}" title="Present from here">▶</a>
+    <div class="lmth-group">
+      <a class="lmth-btn" href="/" title="Deck overview">⌗</a>
+      <button class="lmth-btn" id="lmth-prev" title="Previous slide">‹</button>
+      <span class="lmth-fname">${escapeHtml(CFG.file)}</span>
+      <button class="lmth-btn" id="lmth-next" title="Next slide">›</button>
+      <a class="lmth-btn" href="/present?slide=${encodeURIComponent(CFG.file)}" title="Present from here">▶</a>
     </div>
-    <div class="pml-group">
-      <button class="pml-btn" id="pml-undo" title="Undo (Ctrl+Z)">↶</button>
-      <button class="pml-btn" id="pml-redo" title="Redo (Ctrl+Shift+Z)">↷</button>
-      <button class="pml-btn active" id="pml-snap" title="Snap to grid & guides (hold Alt to bypass)">🧲</button>
-      <div class="pml-menu-wrap">
-        <button class="pml-btn" id="pml-insert" title="Insert element">＋ Insert</button>
-        <div class="pml-menu" id="pml-insert-menu">
-          <button data-pml-ui data-ins="heading">Heading</button>
-          <button data-pml-ui data-ins="text">Text</button>
-          <button data-pml-ui data-ins="bullets">Bullet list</button>
-          <button data-pml-ui data-ins="card">Card</button>
-          <button data-pml-ui data-ins="image-url">Image from URL…</button>
-          <button data-pml-ui data-ins="image-upload">Upload image…</button>
+    <div class="lmth-group">
+      <button class="lmth-btn" id="lmth-undo" title="Undo (Ctrl+Z)">↶</button>
+      <button class="lmth-btn" id="lmth-redo" title="Redo (Ctrl+Shift+Z)">↷</button>
+      <button class="lmth-btn active" id="lmth-snap" title="Snap to grid & guides (hold Alt to bypass)">🧲</button>
+      <div class="lmth-menu-wrap">
+        <button class="lmth-btn" id="lmth-insert" title="Insert element">＋ Insert</button>
+        <div class="lmth-menu" id="lmth-insert-menu">
+          <button data-lmth-ui data-ins="heading">Heading</button>
+          <button data-lmth-ui data-ins="text">Text</button>
+          <button data-lmth-ui data-ins="bullets">Bullet list</button>
+          <button data-lmth-ui data-ins="card">Card</button>
+          <button data-lmth-ui data-ins="image-url">Image from URL…</button>
+          <button data-lmth-ui data-ins="image-upload">Upload image…</button>
         </div>
       </div>
     </div>
-    <div class="pml-group pml-typo">
-      <select id="pml-font" title="Font family" disabled>
+    <div class="lmth-group lmth-typo">
+      <select id="lmth-font" title="Font family" disabled>
         <option value="">Font</option>
         ${Object.keys(GOOGLE_FONTS).map((f) => `<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('')}
         ${SYSTEM_FONTS.map((f) => `<option value="${f}">${f}</option>`).join('')}
       </select>
-      <input id="pml-size" type="number" min="6" max="400" title="Font size (px)" disabled>
-      <button class="pml-btn" id="pml-bold" title="Bold" disabled><b>B</b></button>
-      <button class="pml-btn" id="pml-italic" title="Italic" disabled><i>I</i></button>
-      <label class="pml-swatch" title="Text color"><input id="pml-color" type="color" disabled><span>A</span></label>
-      <label class="pml-swatch" title="Background color"><input id="pml-bg" type="color" disabled><span class="pml-bg-ico"></span></label>
-      <button class="pml-btn" data-align="left" title="Align left" disabled>⇤</button>
-      <button class="pml-btn" data-align="center" title="Align center" disabled>≡</button>
-      <button class="pml-btn" data-align="right" title="Align right" disabled>⇥</button>
-      <select id="pml-fx" title="Entrance effect" disabled>
+      <input id="lmth-size" type="number" min="6" max="400" title="Font size (px)" disabled>
+      <button class="lmth-btn" id="lmth-bold" title="Bold" disabled><b>B</b></button>
+      <button class="lmth-btn" id="lmth-italic" title="Italic" disabled><i>I</i></button>
+      <label class="lmth-swatch" title="Text color"><input id="lmth-color" type="color" disabled><span>A</span></label>
+      <label class="lmth-swatch" title="Background color"><input id="lmth-bg" type="color" disabled><span class="lmth-bg-ico"></span></label>
+      <button class="lmth-btn" data-align="left" title="Align left" disabled>⇤</button>
+      <button class="lmth-btn" data-align="center" title="Align center" disabled>≡</button>
+      <button class="lmth-btn" data-align="right" title="Align right" disabled>⇥</button>
+      <select id="lmth-fx" title="Entrance effect" disabled>
         <option value="">✨ Effect</option>
         ${FX_PRESETS.map((f) => `<option value="${f}">${f}</option>`).join('')}
       </select>
-      <select id="pml-fx-delay" title="Effect delay" disabled>
+      <select id="lmth-fx-delay" title="Effect delay" disabled>
         ${['0s', '0.2s', '0.4s', '0.6s', '0.8s', '1.2s'].map((d) => `<option value="${d}">${d}</option>`).join('')}
       </select>
-      <button class="pml-btn" id="pml-fx-play" title="Preview effects">▶︎fx</button>
-      <button class="pml-btn" id="pml-dup" title="Duplicate element" disabled>⧉</button>
-      <button class="pml-btn" id="pml-del" title="Delete element" disabled>✕</button>
+      <button class="lmth-btn" id="lmth-fx-play" title="Preview effects">▶︎fx</button>
+      <button class="lmth-btn" id="lmth-dup" title="Duplicate element" disabled>⧉</button>
+      <button class="lmth-btn" id="lmth-del" title="Delete element" disabled>✕</button>
     </div>
-    <div class="pml-group">
-      <button class="pml-btn" id="pml-comment-mode" title="Comment mode — click slide to pin">💬</button>
-      <button class="pml-btn" id="pml-panel-toggle" title="Comments panel">☰</button>
-      <button class="pml-btn pml-primary" id="pml-save" title="Save (Ctrl+S)">Save</button>
-      <span class="pml-dot clean" id="pml-status" title="Saved"></span>
+    <div class="lmth-group">
+      <button class="lmth-btn" id="lmth-comment-mode" title="Comment mode — click slide to pin">💬</button>
+      <button class="lmth-btn" id="lmth-panel-toggle" title="Comments panel">☰</button>
+      <button class="lmth-btn lmth-primary" id="lmth-save" title="Save (Ctrl+S)">Save</button>
+      <span class="lmth-dot clean" id="lmth-status" title="Saved"></span>
     </div>`;
   document.body.appendChild(bar);
 
-  const status = $('#pml-status');
-  const typoControls = [...bar.querySelectorAll('.pml-typo select, .pml-typo input, .pml-typo button:not(#pml-fx-play)')];
+  const status = $('#lmth-status');
+  const typoControls = [...bar.querySelectorAll('.lmth-typo select, .lmth-typo input, .lmth-typo button:not(#lmth-fx-play)')];
 
-  const hint = el('div', { class: 'pml-hint' },
+  const hint = el('div', { class: 'lmth-hint' },
     'click select · double-click edit text · drag move · corners resize · arrows nudge · <b>Ctrl+Z</b> undo · <b>Ctrl+S</b> save');
   document.body.appendChild(hint);
 
   // ---------- selection + resize handles ----------
 
-  const resizer = el('div', { class: 'pml-resizer' }, `
-    <div data-pml-ui class="pml-handle" data-h="e"></div>
-    <div data-pml-ui class="pml-handle" data-h="s"></div>
-    <div data-pml-ui class="pml-handle" data-h="se"></div>`);
+  const resizer = el('div', { class: 'lmth-resizer' }, `
+    <div data-lmth-ui class="lmth-handle" data-h="e"></div>
+    <div data-lmth-ui class="lmth-handle" data-h="s"></div>
+    <div data-lmth-ui class="lmth-handle" data-h="se"></div>`);
   document.body.appendChild(resizer);
 
   function updateResizer() {
@@ -257,27 +257,27 @@
     typoControls.forEach((c) => (c.disabled = !on));
     if (!on) return;
     const cs = getComputedStyle(selected);
-    $('#pml-size').value = Math.round(parseFloat(cs.fontSize));
-    $('#pml-font').value =
+    $('#lmth-size').value = Math.round(parseFloat(cs.fontSize));
+    $('#lmth-font').value =
       [...Object.keys(GOOGLE_FONTS), ...SYSTEM_FONTS].find((f) =>
         cs.fontFamily.toLowerCase().includes(f.toLowerCase())
       ) || '';
-    $('#pml-bold').classList.toggle('active', parseInt(cs.fontWeight) >= 600);
-    $('#pml-italic').classList.toggle('active', cs.fontStyle === 'italic');
+    $('#lmth-bold').classList.toggle('active', parseInt(cs.fontWeight) >= 600);
+    $('#lmth-italic').classList.toggle('active', cs.fontStyle === 'italic');
     const toHex = (rgb) => {
       const m = rgb.match(/\d+/g);
       return m ? '#' + m.slice(0, 3).map((n) => (+n).toString(16).padStart(2, '0')).join('') : '#000000';
     };
-    $('#pml-color').value = toHex(cs.color);
-    $('#pml-bg').value = toHex(cs.backgroundColor);
-    $('#pml-fx').value = FX_PRESETS.find((f) => selected.classList.contains('fx-' + f)) || '';
-    $('#pml-fx-delay').value = selected.style.getPropertyValue('--fx-delay') || '0s';
+    $('#lmth-color').value = toHex(cs.color);
+    $('#lmth-bg').value = toHex(cs.backgroundColor);
+    $('#lmth-fx').value = FX_PRESETS.find((f) => selected.classList.contains('fx-' + f)) || '';
+    $('#lmth-fx-delay').value = selected.style.getPropertyValue('--fx-delay') || '0s';
   };
 
   const select = (node) => {
-    if (selected) selected.classList.remove('pml-selected');
+    if (selected) selected.classList.remove('lmth-selected');
     selected = node;
-    if (selected) selected.classList.add('pml-selected');
+    if (selected) selected.classList.add('lmth-selected');
     syncToolbar();
     updateResizer();
   };
@@ -288,9 +288,9 @@
   };
 
   document.addEventListener('mousedown', (e) => {
-    if (e.target.closest('[data-pml-ui]')) return;
+    if (e.target.closest('[data-lmth-ui]')) return;
     if (commentMode) return;
-    const target = e.target.closest('.slide *:not([data-pml-ui])') ||
+    const target = e.target.closest('.slide *:not([data-lmth-ui])') ||
       (e.target.closest('.slide') ? slideEl : null);
     if (!target) return deselect();
     if (target !== selected) {
@@ -310,7 +310,7 @@
   const onTextInput = () => setDirty(true);
 
   document.addEventListener('dblclick', (e) => {
-    if (e.target.closest('[data-pml-ui]') || commentMode) return;
+    if (e.target.closest('[data-lmth-ui]') || commentMode) return;
     const target = e.target.closest('.slide *');
     if (!target || target === slideEl) return;
     snapshot('text:' + Math.random()); // each edit session = own undo step
@@ -321,13 +321,13 @@
     updateResizer();
   });
   document.addEventListener('focusout', (e) => {
-    if (e.target.isContentEditable && !e.target.hasAttribute('data-pml-ui')) endTextEdit(e.target);
+    if (e.target.isContentEditable && !e.target.hasAttribute('data-lmth-ui')) endTextEdit(e.target);
   });
 
   // ---------- snap: grid + smart guides ----------
 
-  const guideV = el('div', { class: 'pml-guide v' });
-  const guideH = el('div', { class: 'pml-guide h' });
+  const guideV = el('div', { class: 'lmth-guide v' });
+  const guideH = el('div', { class: 'lmth-guide h' });
   slideEl.appendChild(guideV);
   slideEl.appendChild(guideH);
   const hideGuides = () => { guideV.style.display = 'none'; guideH.style.display = 'none'; };
@@ -339,7 +339,7 @@
     const s = scaleFactor();
     const sr = slideEl.getBoundingClientRect();
     for (const sib of slideEl.children) {
-      if (sib === node || sib.hasAttribute('data-pml-ui')) continue;
+      if (sib === node || sib.hasAttribute('data-lmth-ui')) continue;
       const r = sib.getBoundingClientRect();
       const L = (r.left - sr.left) / s, T = (r.top - sr.top) / s;
       xs.push(L, L + r.width / s / 2, L + r.width / s);
@@ -372,7 +372,7 @@
     return { left, top };
   };
 
-  $('#pml-snap').addEventListener('click', function () {
+  $('#lmth-snap').addEventListener('click', function () {
     snapOn = !snapOn;
     this.classList.toggle('active', snapOn);
   });
@@ -409,7 +409,7 @@
         w = r0.width / s0;
         h = r0.height / s0;
         targets = snapTargets(node);
-        document.body.classList.add('pml-dragging');
+        document.body.classList.add('lmth-dragging');
       }
       const s = scaleFactor();
       let left = baseL + dx / s, top = baseT + dy / s;
@@ -422,7 +422,7 @@
     const up = () => {
       removeEventListener('mousemove', move);
       removeEventListener('mouseup', up);
-      document.body.classList.remove('pml-dragging');
+      document.body.classList.remove('lmth-dragging');
       hideGuides();
       if (moving) { setDirty(true); updateResizer(); }
     };
@@ -433,7 +433,7 @@
   // ---------- resize via handles ----------
 
   resizer.addEventListener('mousedown', (e) => {
-    const handle = e.target.closest('.pml-handle');
+    const handle = e.target.closest('.lmth-handle');
     if (!handle || !selected) return;
     e.preventDefault();
     e.stopPropagation();
@@ -444,7 +444,7 @@
     const r = node.getBoundingClientRect();
     const startW = r.width / s, startH = r.height / s;
     const startX = e.clientX, startY = e.clientY;
-    document.body.classList.add('pml-dragging');
+    document.body.classList.add('lmth-dragging');
     const move = (ev) => {
       const sc = scaleFactor();
       if (dir.includes('e')) {
@@ -462,7 +462,7 @@
     const up = () => {
       removeEventListener('mousemove', move);
       removeEventListener('mouseup', up);
-      document.body.classList.remove('pml-dragging');
+      document.body.classList.remove('lmth-dragging');
       setDirty(true);
       updateResizer();
     };
@@ -480,45 +480,45 @@
     updateResizer();
   };
 
-  $('#pml-font').addEventListener('change', (e) => {
+  $('#lmth-font').addEventListener('change', (e) => {
     const f = e.target.value;
     if (!f || !selected) return;
     ensureFontLink(f);
     applyStyle('fontFamily', GOOGLE_FONTS[f] ? `'${f}', sans-serif` : f);
   });
-  $('#pml-size').addEventListener('input', (e) => applyStyle('fontSize', e.target.value + 'px'));
-  $('#pml-bold').addEventListener('click', function () {
+  $('#lmth-size').addEventListener('input', (e) => applyStyle('fontSize', e.target.value + 'px'));
+  $('#lmth-bold').addEventListener('click', function () {
     if (!selected) return;
     const isBold = parseInt(getComputedStyle(selected).fontWeight) >= 600;
     applyStyle('fontWeight', isBold ? '400' : '700');
     this.classList.toggle('active', !isBold);
   });
-  $('#pml-italic').addEventListener('click', function () {
+  $('#lmth-italic').addEventListener('click', function () {
     if (!selected) return;
     const isIt = getComputedStyle(selected).fontStyle === 'italic';
     applyStyle('fontStyle', isIt ? 'normal' : 'italic');
     this.classList.toggle('active', !isIt);
   });
-  $('#pml-color').addEventListener('input', (e) => applyStyle('color', e.target.value));
-  $('#pml-bg').addEventListener('input', (e) => applyStyle('backgroundColor', e.target.value));
+  $('#lmth-color').addEventListener('input', (e) => applyStyle('color', e.target.value));
+  $('#lmth-bg').addEventListener('input', (e) => applyStyle('backgroundColor', e.target.value));
   bar.querySelectorAll('[data-align]').forEach((b) =>
     b.addEventListener('click', () => applyStyle('textAlign', b.dataset.align))
   );
 
-  $('#pml-fx').addEventListener('change', (e) => {
+  $('#lmth-fx').addEventListener('change', (e) => {
     if (!selected) return;
     snapshot('fx');
     FX_PRESETS.forEach((f) => selected.classList.remove('fx-' + f));
     if (e.target.value) {
       ensureFxStyle();
       selected.classList.add('fx-' + e.target.value);
-      selected.style.setProperty('--fx-delay', $('#pml-fx-delay').value);
+      selected.style.setProperty('--fx-delay', $('#lmth-fx-delay').value);
       replayFx();
     }
     if (!selected.className.trim()) selected.removeAttribute('class');
     setDirty(true);
   });
-  $('#pml-fx-delay').addEventListener('change', (e) => {
+  $('#lmth-fx-delay').addEventListener('change', (e) => {
     if (!selected) return;
     snapshot('fx');
     selected.style.setProperty('--fx-delay', e.target.value);
@@ -529,13 +529,13 @@
       n.getAnimations().forEach((a) => { a.cancel(); a.play(); })
     );
   };
-  $('#pml-fx-play').addEventListener('click', replayFx);
+  $('#lmth-fx-play').addEventListener('click', replayFx);
 
-  $('#pml-dup').addEventListener('click', () => {
+  $('#lmth-dup').addEventListener('click', () => {
     if (!selected || selected === slideEl) return;
     snapshot('dup:' + Math.random());
     const clone = selected.cloneNode(true);
-    clone.classList.remove('pml-selected');
+    clone.classList.remove('lmth-selected');
     if (clone.style.position === 'absolute') {
       clone.style.left = (parseFloat(clone.style.left) || 0) + 16 + 'px';
       clone.style.top = (parseFloat(clone.style.top) || 0) + 16 + 'px';
@@ -544,7 +544,7 @@
     select(clone);
     setDirty(true);
   });
-  $('#pml-del').addEventListener('click', () => {
+  $('#lmth-del').addEventListener('click', () => {
     if (!selected || selected === slideEl) return;
     snapshot('del:' + Math.random());
     const n = selected;
@@ -553,26 +553,26 @@
     setDirty(true);
   });
 
-  $('#pml-undo').addEventListener('click', undo);
-  $('#pml-redo').addEventListener('click', redo);
+  $('#lmth-undo').addEventListener('click', undo);
+  $('#lmth-redo').addEventListener('click', redo);
 
   const nav = (delta) => {
     const next = CFG.slides[CFG.index + delta];
     if (!next) return;
     location.href = '/edit/' + encodeURIComponent(next);
   };
-  $('#pml-prev').addEventListener('click', () => nav(-1));
-  $('#pml-next').addEventListener('click', () => nav(1));
+  $('#lmth-prev').addEventListener('click', () => nav(-1));
+  $('#lmth-next').addEventListener('click', () => nav(1));
 
   // ---------- insert menu ----------
 
-  const insertMenu = $('#pml-insert-menu');
-  $('#pml-insert').addEventListener('click', (e) => {
+  const insertMenu = $('#lmth-insert-menu');
+  $('#lmth-insert').addEventListener('click', (e) => {
     e.stopPropagation();
     insertMenu.classList.toggle('open');
   });
   document.addEventListener('click', (e) => {
-    if (!e.target.closest('.pml-menu-wrap')) insertMenu.classList.remove('open');
+    if (!e.target.closest('.lmth-menu-wrap')) insertMenu.classList.remove('open');
   });
 
   let insertOffset = 0;
@@ -663,23 +663,23 @@
 
   // Small inline prompt (browser dialogs are avoided on purpose).
   const openTextPrompt = (label, placeholder, cb) => {
-    $('.pml-popover')?.remove();
-    const pop = el('div', { class: 'pml-popover' }, `
-      <label data-pml-ui style="font-size:12px;color:#8b8ba3">${escapeHtml(label)}</label>
-      <input data-pml-ui id="pml-prompt-in" placeholder="${escapeHtml(placeholder)}">
-      <div class="pml-pop-actions">
-        <button data-pml-ui id="pml-prompt-cancel">Cancel</button>
-        <button data-pml-ui id="pml-prompt-ok" class="pml-primary">OK</button>
+    $('.lmth-popover')?.remove();
+    const pop = el('div', { class: 'lmth-popover' }, `
+      <label data-lmth-ui style="font-size:12px;color:#8b8ba3">${escapeHtml(label)}</label>
+      <input data-lmth-ui id="lmth-prompt-in" placeholder="${escapeHtml(placeholder)}">
+      <div class="lmth-pop-actions">
+        <button data-lmth-ui id="lmth-prompt-cancel">Cancel</button>
+        <button data-lmth-ui id="lmth-prompt-ok" class="lmth-primary">OK</button>
       </div>`);
     pop.style.left = '50%';
     pop.style.top = '80px';
     pop.style.transform = 'translateX(-50%)';
     document.body.appendChild(pop);
-    const input = $('#pml-prompt-in');
+    const input = $('#lmth-prompt-in');
     input.focus();
     const done = (v) => { pop.remove(); cb(v); };
-    $('#pml-prompt-cancel').addEventListener('click', () => done(null));
-    $('#pml-prompt-ok').addEventListener('click', () => done(input.value.trim()));
+    $('#lmth-prompt-cancel').addEventListener('click', () => done(null));
+    $('#lmth-prompt-ok').addEventListener('click', () => done(input.value.trim()));
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') done(input.value.trim());
       if (e.key === 'Escape') done(null);
@@ -694,7 +694,7 @@
     if (inTextInput()) return;
     if (mod && !e.shiftKey && e.key === 'z') { e.preventDefault(); return undo(); }
     if (mod && (e.key === 'y' || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) { e.preventDefault(); return redo(); }
-    if (mod && e.key === 'd' && selected) { e.preventDefault(); return $('#pml-dup').click(); }
+    if (mod && e.key === 'd' && selected) { e.preventDefault(); return $('#lmth-dup').click(); }
     if (e.key === 'Escape') {
       if (commentMode) return toggleCommentMode();
       return deselect();
@@ -702,7 +702,7 @@
     if (!selected) return;
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
-      return $('#pml-del').click();
+      return $('#lmth-del').click();
     }
     const step = e.shiftKey ? 10 : 1;
     const dirs = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
@@ -721,14 +721,14 @@
 
   const serialize = () => {
     const clone = document.documentElement.cloneNode(true);
-    clone.querySelectorAll('[data-pml-runtime], [data-pml-ui]').forEach((n) => n.remove());
+    clone.querySelectorAll('[data-lmth-runtime], [data-lmth-ui]').forEach((n) => n.remove());
     clone.querySelectorAll('[contenteditable]').forEach((n) => n.removeAttribute('contenteditable'));
-    clone.querySelectorAll('.pml-selected').forEach((n) => {
-      n.classList.remove('pml-selected');
+    clone.querySelectorAll('.lmth-selected').forEach((n) => {
+      n.classList.remove('lmth-selected');
       if (!n.className) n.removeAttribute('class');
     });
-    clone.style.removeProperty('--pml-zoom');
-    clone.classList.remove('pml-editing');
+    clone.style.removeProperty('--lmth-zoom');
+    clone.classList.remove('lmth-editing');
     if (!clone.className) clone.removeAttribute('class');
     if (!clone.getAttribute('style')) clone.removeAttribute('style');
     return '<!doctype html>\n' + clone.outerHTML + '\n';
@@ -748,10 +748,10 @@
       flash('Save failed: ' + e.message, true);
     }
   };
-  $('#pml-save').addEventListener('click', save);
+  $('#lmth-save').addEventListener('click', save);
 
   const flash = (msg, bad = false) => {
-    const t = el('div', { class: 'pml-toast' + (bad ? ' bad' : '') }, msg);
+    const t = el('div', { class: 'lmth-toast' + (bad ? ' bad' : '') }, msg);
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 2200);
   };
@@ -762,12 +762,12 @@
 
   // ---------- live reload ----------
 
-  const reloadBar = el('div', { class: 'pml-reload-bar' },
-    'File changed on disk. <button data-pml-ui id="pml-reload-yes">Reload</button><button data-pml-ui id="pml-reload-no">Keep my edits</button>');
+  const reloadBar = el('div', { class: 'lmth-reload-bar' },
+    'File changed on disk. <button data-lmth-ui id="lmth-reload-yes">Reload</button><button data-lmth-ui id="lmth-reload-no">Keep my edits</button>');
   reloadBar.style.display = 'none';
   document.body.appendChild(reloadBar);
-  $('#pml-reload-yes').addEventListener('click', () => { dirty = false; location.reload(); });
-  $('#pml-reload-no').addEventListener('click', () => (reloadBar.style.display = 'none'));
+  $('#lmth-reload-yes').addEventListener('click', () => { dirty = false; location.reload(); });
+  $('#lmth-reload-no').addEventListener('click', () => (reloadBar.style.display = 'none'));
 
   new EventSource('/events').onmessage = (e) => {
     const ev = JSON.parse(e.data);
@@ -777,9 +777,9 @@
     if (mine || theme) {
       if (!dirty) location.reload();
       else if (theme) {
-        document.querySelectorAll('link[rel="stylesheet"]:not([data-pml-runtime])').forEach((l) => {
+        document.querySelectorAll('link[rel="stylesheet"]:not([data-lmth-runtime])').forEach((l) => {
           const u = new URL(l.href);
-          u.searchParams.set('pml-bust', Date.now());
+          u.searchParams.set('lmth-bust', Date.now());
           l.href = u.href;
         });
       } else reloadBar.style.display = 'flex';
@@ -788,25 +788,25 @@
 
   // ---------- comments ----------
 
-  const panel = el('div', { class: 'pml-panel' }, `
-    <div class="pml-panel-head">Comments <button data-pml-ui id="pml-panel-close">✕</button></div>
-    <div class="pml-panel-body" id="pml-comment-list"></div>`);
+  const panel = el('div', { class: 'lmth-panel' }, `
+    <div class="lmth-panel-head">Comments <button data-lmth-ui id="lmth-panel-close">✕</button></div>
+    <div class="lmth-panel-body" id="lmth-comment-list"></div>`);
   document.body.appendChild(panel);
-  $('#pml-panel-close').addEventListener('click', () => panel.classList.remove('open'));
-  $('#pml-panel-toggle').addEventListener('click', () => panel.classList.toggle('open'));
+  $('#lmth-panel-close').addEventListener('click', () => panel.classList.remove('open'));
+  $('#lmth-panel-toggle').addEventListener('click', () => panel.classList.toggle('open'));
 
   const toggleCommentMode = () => {
     commentMode = !commentMode;
-    $('#pml-comment-mode').classList.toggle('active', commentMode);
-    document.body.classList.toggle('pml-comment-mode', commentMode);
+    $('#lmth-comment-mode').classList.toggle('active', commentMode);
+    document.body.classList.toggle('lmth-comment-mode', commentMode);
     if (commentMode) deselect();
   };
-  $('#pml-comment-mode').addEventListener('click', toggleCommentMode);
+  $('#lmth-comment-mode').addEventListener('click', toggleCommentMode);
 
   function renderPins() {
-    slideEl.querySelectorAll('.pml-pin').forEach((p) => p.remove());
+    slideEl.querySelectorAll('.lmth-pin').forEach((p) => p.remove());
     comments.filter((c) => !c.resolved).forEach((c) => {
-      const pin = el('div', { class: 'pml-pin', title: c.author + ': ' + c.text }, String(c.id));
+      const pin = el('div', { class: 'lmth-pin', title: c.author + ': ' + c.text }, String(c.id));
       pin.style.left = c.x + '%';
       pin.style.top = c.y + '%';
       pin.addEventListener('click', (e) => {
@@ -819,33 +819,33 @@
   }
 
   const renderPanel = () => {
-    const list = $('#pml-comment-list');
+    const list = $('#lmth-comment-list');
     if (!comments.length) {
-      list.innerHTML = '<p class="pml-empty">No comments yet.<br>Toggle 💬 and click the slide to add one.</p>';
+      list.innerHTML = '<p class="lmth-empty">No comments yet.<br>Toggle 💬 and click the slide to add one.</p>';
       return;
     }
     list.innerHTML = comments
       .slice()
       .sort((a, b) => a.resolved - b.resolved || b.ts - a.ts)
       .map((c) => `
-        <div class="pml-comment ${c.resolved ? 'resolved' : ''}" data-cid="${c.id}">
-          <div class="pml-c-head"><span class="pml-c-pin">${c.id}</span><b>${escapeHtml(c.author)}</b>
-            <button data-pml-ui class="pml-c-resolve" data-id="${c.id}" title="${c.resolved ? 'Reopen' : 'Resolve'}">${c.resolved ? '↺' : '✓'}</button>
+        <div class="lmth-comment ${c.resolved ? 'resolved' : ''}" data-cid="${c.id}">
+          <div class="lmth-c-head"><span class="lmth-c-pin">${c.id}</span><b>${escapeHtml(c.author)}</b>
+            <button data-lmth-ui class="lmth-c-resolve" data-id="${c.id}" title="${c.resolved ? 'Reopen' : 'Resolve'}">${c.resolved ? '↺' : '✓'}</button>
           </div>
-          <div class="pml-c-text">${escapeHtml(c.text)}</div>
-          ${c.replies.map((r) => `<div class="pml-c-reply"><b>${escapeHtml(r.author)}</b> ${escapeHtml(r.text)}</div>`).join('')}
-          <form data-pml-ui class="pml-c-replyform" data-id="${c.id}">
-            <input data-pml-ui placeholder="Reply…"><button data-pml-ui>↩</button>
+          <div class="lmth-c-text">${escapeHtml(c.text)}</div>
+          ${c.replies.map((r) => `<div class="lmth-c-reply"><b>${escapeHtml(r.author)}</b> ${escapeHtml(r.text)}</div>`).join('')}
+          <form data-lmth-ui class="lmth-c-replyform" data-id="${c.id}">
+            <input data-lmth-ui placeholder="Reply…"><button data-lmth-ui>↩</button>
           </form>
         </div>`)
       .join('');
-    list.querySelectorAll('.pml-c-resolve').forEach((b) =>
+    list.querySelectorAll('.lmth-c-resolve').forEach((b) =>
       b.addEventListener('click', async () => {
         await fetch(`/api/comments/${b.dataset.id}/resolve`, { method: 'POST' });
         loadComments();
       })
     );
-    list.querySelectorAll('.pml-c-replyform').forEach((f) =>
+    list.querySelectorAll('.lmth-c-replyform').forEach((f) =>
       f.addEventListener('submit', async (e) => {
         e.preventDefault();
         const text = f.querySelector('input').value.trim();
@@ -860,7 +860,7 @@
     );
   };
 
-  const authorName = () => localStorage.getItem('pml-author') || 'anon';
+  const authorName = () => localStorage.getItem('lmth-author') || 'anon';
 
   const loadComments = async () => {
     const res = await fetch('/api/comments?file=' + encodeURIComponent(CFG.file));
@@ -871,7 +871,7 @@
 
   // Click-to-pin popover (document-level: slideEl can be swapped by undo/redo)
   document.addEventListener('click', (e) => {
-    if (!commentMode || e.target.closest('[data-pml-ui]') || !e.target.closest('.slide')) return;
+    if (!commentMode || e.target.closest('[data-lmth-ui]') || !e.target.closest('.slide')) return;
     const sr = slideEl.getBoundingClientRect();
     const x = ((e.clientX - sr.left) / sr.width) * 100;
     const y = ((e.clientY - sr.top) / sr.height) * 100;
@@ -879,24 +879,24 @@
   });
 
   const openCommentPopover = (px, py, x, y) => {
-    $('.pml-popover')?.remove();
-    const pop = el('div', { class: 'pml-popover' }, `
-      <input data-pml-ui id="pml-c-author" placeholder="Your name" value="${escapeHtml(authorName() === 'anon' ? '' : authorName())}">
-      <textarea data-pml-ui id="pml-c-text" placeholder="Comment…" rows="3"></textarea>
-      <div class="pml-pop-actions">
-        <button data-pml-ui id="pml-c-cancel">Cancel</button>
-        <button data-pml-ui id="pml-c-post" class="pml-primary">Comment</button>
+    $('.lmth-popover')?.remove();
+    const pop = el('div', { class: 'lmth-popover' }, `
+      <input data-lmth-ui id="lmth-c-author" placeholder="Your name" value="${escapeHtml(authorName() === 'anon' ? '' : authorName())}">
+      <textarea data-lmth-ui id="lmth-c-text" placeholder="Comment…" rows="3"></textarea>
+      <div class="lmth-pop-actions">
+        <button data-lmth-ui id="lmth-c-cancel">Cancel</button>
+        <button data-lmth-ui id="lmth-c-post" class="lmth-primary">Comment</button>
       </div>`);
     pop.style.left = Math.min(px, innerWidth - 280) + 'px';
     pop.style.top = Math.min(py, innerHeight - 220) + 'px';
     document.body.appendChild(pop);
-    $('#pml-c-text').focus();
-    $('#pml-c-cancel').addEventListener('click', () => pop.remove());
-    $('#pml-c-post').addEventListener('click', async () => {
-      const author = $('#pml-c-author').value.trim() || 'anon';
-      const text = $('#pml-c-text').value.trim();
+    $('#lmth-c-text').focus();
+    $('#lmth-c-cancel').addEventListener('click', () => pop.remove());
+    $('#lmth-c-post').addEventListener('click', async () => {
+      const author = $('#lmth-c-author').value.trim() || 'anon';
+      const text = $('#lmth-c-text').value.trim();
       if (!text) return;
-      localStorage.setItem('pml-author', author);
+      localStorage.setItem('lmth-author', author);
       await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

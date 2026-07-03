@@ -1,13 +1,13 @@
 # Workspace Map
 
 ## Purpose
-Build pml: presentations as plain HTML files — local server adds visual editing, comments, live reload. AI-agent-native by design.
+Build lmth: presentations as plain HTML files — local server adds visual editing, comments, live reload. AI-agent-native by design.
 
 ## Workspace Inventory
 | Workspace | Folder | What lives here |
 |-----------|--------|-----------------|
 | Product code | `src/`, `bin/` | Server (zero-dep Node), editor runtime, CLI |
-| Deck template | `templates/` | Scaffold copied by `pml new` |
+| Deck template | `templates/` | Scaffold copied by `lmth new` |
 | Examples | `examples/` | Demo decks (launch = showcase) |
 | Integration | `integration/` | Drop-ins for users' Claude Code / Cursor setups |
 | Docs | `docs/` | SPEC + decisions. Read SPEC before touching product code |
@@ -27,10 +27,10 @@ Build pml: presentations as plain HTML files — local server adds visual editin
 5. No reading outside active workspace unless routed.
 
 ## Workspaces
-See each folder's `_context.md`. Core contract: docs/SPEC_pml.md.
+See each folder's `_context.md`. Core contract: docs/SPEC_lmth.md.
 
 ## Run / test
 ```bash
 npm run demo                       # serve example deck on :4321
-node bin/pml.js new t && node bin/pml.js serve t   # scaffold test
+node bin/lmth.js new t && node bin/lmth.js serve t   # scaffold test
 ```

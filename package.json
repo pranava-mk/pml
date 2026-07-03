@@ -1,14 +1,14 @@
 {
-  "name": "pml",
+  "name": "lmth",
   "version": "0.1.0",
   "description": "Presentations as plain HTML files. Visual editing, comments, live reload — built to sit inside AI coding workflows.",
   "type": "module",
   "bin": {
-    "pml": "bin/pml.js"
+    "lmth": "bin/lmth.js"
   },
   "scripts": {
-    "start": "node bin/pml.js serve examples/launch",
-    "demo": "node bin/pml.js serve examples/launch"
+    "start": "node bin/lmth.js serve examples/launch",
+    "demo": "node bin/lmth.js serve examples/launch"
   },
   "engines": {
     "node": ">=20"

@@ -1,4 +1,4 @@
-// pml server — zero-dependency presentation server.
+// lmth server — zero-dependency presentation server.
 // Serves a deck folder, injects the visual editor, streams live-reload
 // events over SSE, and persists saves/comments back to disk.
 
@@ -34,7 +34,7 @@ const esc = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const FAVICON = `<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(
-  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237c6cff'/><stop offset='1' stop-color='%23ff6ec7'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%230a0a0f'>p</text></svg>`
+  `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237c6cff'/><stop offset='1' stop-color='%23ff6ec7'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%230a0a0f'>l</text></svg>`
 )}">`;
 
 const BLANK_SLIDE = `<!doctype html>
@@ -61,7 +61,7 @@ export async function startServer({ deckDir, port = 4321 }) {
   deckDir = path.resolve(deckDir);
   const slidesDir = path.join(deckDir, 'slides');
   if (!fs.existsSync(slidesDir)) {
-    throw new Error(`Not a pml deck: ${deckDir} (missing slides/ folder). Run \`pml new <name>\` to create one.`);
+    throw new Error(`Not a lmth deck: ${deckDir} (missing slides/ folder). Run \`lmth new <name>\` to create one.`);
   }
 
   const sseClients = new Set();
@@ -173,7 +173,7 @@ export async function startServer({ deckDir, port = 4321 }) {
       );
     });
   } catch (e) {
-    console.warn('pml: file watching unavailable:', e.message);
+    console.warn('lmth: file watching unavailable:', e.message);
   }
 
   // ---------- pages ----------
@@ -200,12 +200,12 @@ export async function startServer({ deckDir, port = 4321 }) {
       .join('');
     return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${esc(meta.title || 'pml deck')}</title>
+<title>${esc(meta.title || 'lmth deck')}</title>
 ${FAVICON}
-<link rel="stylesheet" href="/_pml/app.css">
-</head><body class="pml-app">
+<link rel="stylesheet" href="/_lmth/app.css">
+</head><body class="lmth-app">
 <header class="topbar">
-  <div class="brand"><span class="logo">pml</span><h1>${esc(meta.title || 'Untitled deck')}</h1></div>
+  <div class="brand"><span class="logo">lmth</span><h1>${esc(meta.title || 'Untitled deck')}</h1></div>
   <nav>
     <span class="hint">${slides.length} slide${slides.length === 1 ? '' : 's'} · click any slide to edit</span>
     <a class="btn" href="/export?download=1" title="Download the whole deck as one self-contained HTML file">⇩ Export</a>
@@ -298,10 +298,10 @@ ${FAVICON}
     const slides = await listSlides();
     return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
-<title>${esc(meta.title || 'pml')} — present</title>
+<title>${esc(meta.title || 'lmth')} — present</title>
 ${FAVICON}
-<link rel="stylesheet" href="/_pml/app.css">
-</head><body class="pml-present">
+<link rel="stylesheet" href="/_lmth/app.css">
+</head><body class="lmth-present">
 <div id="stage"><div id="frame-holder"></div></div>
 <div id="hud"><span id="counter"></span><span class="hud-hint">← → navigate · F fullscreen · Esc overview</span></div>
 <script>
@@ -359,9 +359,9 @@ ${FAVICON}
     let html = await fsp.readFile(abs, 'utf8');
     const slides = await listSlides();
     const inject = `
-<link rel="stylesheet" href="/_pml/editor.css" data-pml-runtime>
-<script data-pml-runtime>window.__PML__ = ${JSON.stringify({ file, slides, index: slides.indexOf(file) })};</script>
-<script src="/_pml/editor.js" defer data-pml-runtime></script>
+<link rel="stylesheet" href="/_lmth/editor.css" data-lmth-runtime>
+<script data-lmth-runtime>window.__LMTH__ = ${JSON.stringify({ file, slides, index: slides.indexOf(file) })};</script>
+<script src="/_lmth/editor.js" defer data-lmth-runtime></script>
 `;
     if (/<\/body>/i.test(html)) html = html.replace(/<\/body>/i, inject + '</body>');
     else html += inject;
@@ -525,8 +525,8 @@ ${FAVICON}
       }
 
       // Editor runtime assets
-      if (p.startsWith('/_pml/')) {
-        const abs = path.resolve(EDITOR_DIR, p.slice('/_pml/'.length));
+      if (p.startsWith('/_lmth/')) {
+        const abs = path.resolve(EDITOR_DIR, p.slice('/_lmth/'.length));
         if (abs.startsWith(EDITOR_DIR) && (await sendFile(res, abs))) return;
         return json(res, 404, { error: 'not found' });
       }

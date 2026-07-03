@@ -1,4 +1,4 @@
-/* pml app chrome — overview grid + presenter */
+/* lmth app chrome — overview grid + presenter */
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
@@ -15,7 +15,7 @@
 
 * { box-sizing: border-box; }
 
-body.pml-app {
+body.lmth-app {
   margin: 0;
   min-height: 100vh;
   background:
@@ -157,7 +157,7 @@ body.pml-app {
 .empty code { color: var(--accent); }
 
 /* ---------- presenter ---------- */
-body.pml-present {
+body.lmth-present {
   margin: 0;
   background: #000;
   overflow: hidden;
@@ -199,6 +199,6 @@ body.pml-present {
   opacity: 0;
   transition: opacity 0.25s;
 }
-body.pml-present:hover #hud { opacity: 1; }
+body.lmth-present:hover #hud { opacity: 1; }
 #hud .hud-hint { color: #8b8ba3; }
 #counter { font-family: 'JetBrains Mono', monospace; }

@@ -1,10 +1,10 @@
-# pml
+# lmth
 
 **Presentations are just files.** Plain HTML slides with visual editing, comments, presenter mode, and live reload — built to sit inside the AI coding workflow you already use.
 
 ```bash
-node bin/pml.js new my-deck
-cd my-deck && node ../bin/pml.js serve
+node bin/lmth.js new my-deck
+cd my-deck && node ../bin/lmth.js serve
 # → http://localhost:4321
 ```
 
@@ -21,7 +21,7 @@ Or try the showcase: `npm run demo`
 
 ## The AI loop
 
-Slides are plain HTML files, so any agent — Claude Code, Cursor, whatever — can create and edit them natively. Run `pml serve`, prompt your agent, watch the deck build itself. Edit visually in the browser; the agent sees your changes as file diffs. See [`integration/`](integration/README.md) for one-line setup.
+Slides are plain HTML files, so any agent — Claude Code, Cursor, whatever — can create and edit them natively. Run `lmth serve`, prompt your agent, watch the deck build itself. Edit visually in the browser; the agent sees your changes as file diffs. See [`integration/`](integration/README.md) for one-line setup.
 
 ## Deck format
 
@@ -37,4 +37,4 @@ my-deck/
 
 Every slide opens in a browser with zero tooling. Git is your history, review, and sharing layer.
 
-Zero npm dependencies. Node ≥ 20. Full contract: [`docs/SPEC_pml.md`](docs/SPEC_pml.md).
+Zero npm dependencies. Node ≥ 20. Full contract: [`docs/SPEC_lmth.md`](docs/SPEC_lmth.md).
