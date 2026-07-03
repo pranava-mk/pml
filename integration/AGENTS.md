@@ -15,6 +15,12 @@ Rules:
    coords, `text`, `resolved`). Read it to address feedback. Never edit it.
 5. The user edits visually in the browser too — dragged elements gain inline
    `position:absolute; left; top`. Preserve inline styles unless asked.
-6. Reorder slides by renaming the numeric prefix.
-7. Design bar: one big statement per slide, strong hierarchy, ≤5 bullets,
+6. Reorder slides by renaming the numeric prefix. Deleted slides live in
+   `.trash/` — ignore it. Uploaded images live in `assets/` (link as
+   `../assets/<name>`).
+7. Entrance effects: theme.css defines `fx-fade-in`, `fx-fade-up`,
+   `fx-zoom-in`, `fx-slide-left`, `fx-slide-right`, `fx-blur-in` classes;
+   stagger via inline `style="--fx-delay:0.4s"`. Sparingly — 1–2 per slide.
+   Editors may inject a `<style data-pml-fx>` block into slides; keep it.
+8. Design bar: one big statement per slide, strong hierarchy, ≤5 bullets,
    use theme CSS variables for color.

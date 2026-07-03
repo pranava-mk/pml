@@ -12,10 +12,11 @@ Or try the showcase: `npm run demo`
 
 ## What you get
 
-- **Overview** (`/`) — slide grid, click to edit
-- **Editor** (`/edit/<slide>`) — click to select, double-click to edit text, drag to move, toolbar for fonts / sizes / colors / align, Ctrl+S writes clean HTML back to disk
+- **Overview** (`/`) — slide grid; new / duplicate / delete slides, one-click export
+- **Editor** (`/edit/<slide>`) — click to select, double-click to edit text, drag with grid snap + smart guides, resize handles, undo/redo, insert menu (text, cards, images incl. upload), fonts / sizes / colors / align, entrance-effect presets, Ctrl+S writes clean HTML back to disk
 - **Comments** — pin feedback on slides, reply, resolve; stored in `comments.json`
-- **Presenter** (`/present`) — fullscreen, arrow keys, scale-to-fit
+- **Presenter** (`/present`) — fullscreen, arrow keys, slide/fade transitions, scale-to-fit
+- **Export** (`/export`) — whole deck as one self-contained HTML file; per-slide standalone export too
 - **Live reload** — any file change (yours or your AI agent's) updates the browser instantly
 
 ## The AI loop

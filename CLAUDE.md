@@ -11,6 +11,7 @@ Build pml: presentations as plain HTML files — local server adds visual editin
 | Examples | `examples/` | Demo decks (launch = showcase) |
 | Integration | `integration/` | Drop-ins for users' Claude Code / Cursor setups |
 | Docs | `docs/` | SPEC + decisions. Read SPEC before touching product code |
+| Landing site | `site/` | Self-contained GSAP horizontal-scroll page. No build |
 
 ## Naming conventions
 - Slides: `NN-slug.html` (NN = sort order)

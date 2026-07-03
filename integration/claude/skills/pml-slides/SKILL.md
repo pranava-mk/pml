@@ -11,12 +11,14 @@ pml decks are folders of plain HTML files. A local server (`pml serve <deck>`) g
 
 ```
 mydeck/
-  deck.json          # {"title": "...", "author": "..."}
-  theme.css          # shared styles + font imports
+  deck.json          # {"title", "author", "transition": "slide"|"fade"|"none"}
+  theme.css          # shared styles + font imports + fx preset classes
   slides/
     01-title.html    # one file = one slide, presented in filename sort order
     02-agenda.html
+  assets/            # uploaded images — reference as ../assets/<name> from slides
   comments.json      # user feedback pins — READ these, never edit by hand
+  .trash/            # soft-deleted slides — ignore
 ```
 
 ## Slide contract (must hold for every slide)
@@ -38,6 +40,10 @@ mydeck/
 **Address feedback**: read `comments.json`. Each comment has `file`, `x`/`y` (percent position on the slide), `author`, `text`, `resolved`. Fix unresolved comments in the referenced slide, then tell the user which comment IDs you addressed so they can resolve them in the browser panel.
 
 **Respect visual edits**: the user may have dragged elements (they become `position: absolute` with inline `left`/`top`) or restyled things inline. Preserve those inline styles unless the user asks you to change them.
+
+## Entrance effects
+
+Decks scaffolded by `pml new` define preset classes in theme.css: `fx-fade-in`, `fx-fade-up`, `fx-zoom-in`, `fx-slide-left`, `fx-slide-right`, `fx-blur-in`. Add the class to any element inside `.slide`; stagger with an inline delay: `style="--fx-delay:0.4s"`. They animate on slide load in presenter/export. If a deck's theme.css lacks them, the browser editor injects an equivalent `<style data-pml-fx>` into the slide — leave that block alone. Use effects sparingly: one or two per slide, staggered.
 
 ## Design bar
 

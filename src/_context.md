@@ -22,7 +22,7 @@ Server + editor runtime + CLI (`../bin/pml.js`). Output: `pml` command users run
 
 ## Conventions
 - Everything editor injects tagged `data-pml-ui` or `data-pml-runtime` → stripped by `serialize()` before save. New UI must carry tag or it leaks into saved slides.
-- Persisted font links keep `data-pml-font` (NOT stripped).
+- Persisted into saved slides (NOT stripped): `link[data-pml-font]`, `style[data-pml-fx]`.
 - Server writes → `writeOwn()` (suppresses watcher echo, 1500ms window).
 - Coordinate math: always divide by `scaleFactor()` (slide zoomed to fit).
 - Update `../docs/SPEC_pml.md` when routes/contract change.

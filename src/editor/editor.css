@@ -341,3 +341,62 @@ body.pml-comment-mode .slide, body.pml-comment-mode .slide * { cursor: crosshair
   border: 1px solid #2b2b42;
   color: #cfcfe2;
 }
+
+/* ---------- resize handles ---------- */
+.pml-resizer {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99980;
+  display: none;
+}
+.pml-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid #7c6cff;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+.pml-handle[data-h='e'] { right: -7px; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+.pml-handle[data-h='s'] { bottom: -7px; left: 50%; transform: translateX(-50%); cursor: ns-resize; }
+.pml-handle[data-h='se'] { right: -7px; bottom: -7px; cursor: nwse-resize; }
+
+/* ---------- smart guides ---------- */
+.pml-guide {
+  position: absolute;
+  background: #ff6ec7;
+  z-index: 9998;
+  pointer-events: none;
+}
+.pml-guide.v { width: 1px; top: 0; bottom: 0; }
+.pml-guide.h { height: 1px; left: 0; right: 0; }
+
+/* ---------- insert menu ---------- */
+.pml-menu-wrap { position: relative; }
+.pml-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 180px;
+  background: #161624;
+  border: 1px solid #2b2b42;
+  border-radius: 12px;
+  padding: 6px;
+  z-index: 99997;
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.55);
+  flex-direction: column;
+}
+.pml-menu.open { display: flex; }
+.pml-menu button {
+  background: none;
+  border: none;
+  color: #cfcfe2;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: 13px 'Space Grotesk', system-ui, sans-serif;
+}
+.pml-menu button:hover { background: #24243a; color: #fff; }

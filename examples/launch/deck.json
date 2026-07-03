@@ -1,4 +1,5 @@
 {
   "title": "pml — presentations are just files",
-  "author": "Pranava"
+  "author": "Pranava",
+  "transition": "slide"
 }
