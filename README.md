@@ -1,6 +1,8 @@
 # pml — presentation markup language
 
-**Presentations are just files.** Plain HTML slides with visual editing, comments, presenter mode, and live reload — built to sit inside the AI coding workflow you already use.
+**Presentations are just files.**
+
+🌐 **[presentations-markup-language.vercel.app](https://presentations-markup-language.vercel.app)** · ⚡ **[Try the app — no install](https://presentations-markup-language.vercel.app/app/)** Plain HTML slides with visual editing, comments, presenter mode, and live reload — built to sit inside the AI coding workflow you already use.
 
 ```bash
 node bin/pml.js new my-deck
