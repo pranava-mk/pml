@@ -1,0 +1,136 @@
+/* Deck theme — shared by every slide. Edit freely; the editor live-reloads. */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Bricolage+Grotesque:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+  --bg: #0b0b12;
+  --surface: #14141f;
+  --line: #26263a;
+  --text: #f2f2f7;
+  --muted: #9a9ab2;
+  --accent: #7c6cff;
+  --accent-2: #ff6ec7;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: #08080c;
+}
+
+/* The slide canvas: fixed 1280×720. Keep position: relative — absolute
+   children and comment pins anchor to it. */
+.slide {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  padding: 80px 96px;
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(124, 108, 255, 0.18), transparent 60%),
+    radial-gradient(700px 400px at 0% 110%, rgba(255, 110, 199, 0.10), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ---------- type ---------- */
+.kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 18px;
+}
+h1.title {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 88px;
+  font-weight: 800;
+  line-height: 1.02;
+  margin: 0 0 24px;
+  letter-spacing: -0.02em;
+}
+h2.heading {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 54px;
+  font-weight: 800;
+  margin: 0 0 32px;
+  letter-spacing: -0.01em;
+}
+.subtitle { font-size: 26px; color: var(--muted); margin: 0; line-height: 1.5; }
+.accent {
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ---------- layout helpers ---------- */
+.bullets { font-size: 26px; line-height: 2; margin: 0; padding-left: 28px; color: var(--text); }
+.bullets li::marker { color: var(--accent); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 28px 32px;
+}
+.card h3 { margin: 0 0 10px; font-size: 24px; }
+.card p { margin: 0; color: var(--muted); font-size: 18px; line-height: 1.6; }
+.footer {
+  position: absolute;
+  bottom: 36px;
+  left: 96px;
+  right: 96px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+}
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ---------- launch-deck extras ---------- */
+.codeblock {
+  background: #0d0d16;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 17px;
+  line-height: 1.8;
+  color: #c9c9e0;
+}
+.codeblock .c { color: #5a5a78; }
+.codeblock .g { color: #3ddc84; }
+.codeblock .p { color: var(--accent-2); }
+.stat { font-family: 'Bricolage Grotesque', sans-serif; font-size: 64px; font-weight: 800; margin: 0; }
+.stat + p { margin: 6px 0 0; color: var(--muted); font-size: 18px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+.step-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  display: block;
+  margin-bottom: 12px;
+}
+.vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 32px; align-items: stretch; }
+.vs .divider {
+  align-self: center;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--muted);
+}
+.vs .card.win { border-color: var(--accent); box-shadow: 0 0 40px rgba(124,108,255,0.15); }
+.vs .card ul { margin: 12px 0 0; padding-left: 22px; color: var(--muted); font-size: 18px; line-height: 1.9; }
+.vs .card.win ul { color: var(--text); }
+.vs .card ul li::marker { color: var(--accent); }
