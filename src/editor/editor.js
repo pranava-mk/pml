@@ -49,6 +49,7 @@
   let commentMode = false;
   let snapOn = true;
   let comments = [];
+  let autosaveTimer;
 
   // ---------- helpers ----------
 
@@ -70,6 +71,16 @@
     dirty = v;
     status.className = 'pml-dot ' + (v ? 'dirty' : 'clean');
     status.title = v ? 'Unsaved changes' : 'Saved';
+    if (v) {
+      clearTimeout(autosaveTimer);
+      // save is a const defined later in the same IIFE scope; the timer fires
+      // after full init so the reference resolves fine.
+      autosaveTimer = setTimeout(() => {
+        if (dirty && !document.body.classList.contains('pml-dragging')) save(false);
+      }, 1600);
+    } else {
+      clearTimeout(autosaveTimer);
+    }
   };
 
   const escapeHtml = (s) =>
@@ -219,6 +230,7 @@
       <button class="pml-btn" id="pml-del" title="Delete element" disabled>✕</button>
     </div>
     <div class="pml-group">
+      <button class="pml-btn" id="pml-notes-btn" title="Speaker notes" aria-label="Speaker notes">📝</button>
       <button class="pml-btn" id="pml-comment-mode" title="Comment mode — click slide to pin">💬</button>
       <button class="pml-btn" id="pml-panel-toggle" title="Comments panel">☰</button>
       <button class="pml-btn pml-primary" id="pml-save" title="Save (Ctrl+S)">Save</button>
@@ -738,7 +750,7 @@
     return '<!doctype html>\n' + clone.outerHTML + '\n';
   };
 
-  const save = async () => {
+  const save = async (manual = true) => {
     try {
       const res = await fetch(BASE + '/api/save', {
         method: 'POST',
@@ -747,12 +759,12 @@
       });
       if (!res.ok) throw new Error((await res.json()).error || res.status);
       setDirty(false);
-      flash('Saved ✓');
+      if (manual) flash('Saved ✓');
     } catch (e) {
       flash('Save failed: ' + e.message, true);
     }
   };
-  $('#pml-save').addEventListener('click', save);
+  $('#pml-save').addEventListener('click', () => save());
 
   const flash = (msg, bad = false) => {
     const t = el('div', { class: 'pml-toast' + (bad ? ' bad' : '') }, msg);
@@ -912,6 +924,64 @@
       panel.classList.add('open');
     });
   };
+
+  // ---------- speaker notes ----------
+
+  // The notes <script> is NOT created via el(), so it carries no data-pml-ui
+  // attribute and survives serialize() — it is persisted into the saved file.
+  const ensureNotesScript = () => {
+    let s = document.querySelector('script[type="text/pml-notes"]');
+    if (!s) {
+      s = document.createElement('script');
+      s.type = 'text/pml-notes';
+      document.head.appendChild(s);
+    }
+    return s;
+  };
+
+  // Panel is created via el() → root gets data-pml-ui → stripped on save.
+  const notesPanel = el('div', { class: 'pml-notes-panel' }, `
+    <div data-pml-ui class="pml-notes-head">
+      <span data-pml-ui>Speaker notes</span>
+      <button data-pml-ui id="pml-notes-close">✕</button>
+    </div>
+    <textarea data-pml-ui id="pml-notes-ta" placeholder="Notes for this slide — visible in presenter view (press N while presenting)"></textarea>`);
+  notesPanel.style.display = 'none';
+  document.body.appendChild(notesPanel);
+
+  // Load existing notes from the persisted script tag (if any).
+  (() => {
+    const s = document.querySelector('script[type="text/pml-notes"]');
+    if (!s) return;
+    try { $('#pml-notes-ta').value = JSON.parse(s.textContent); } catch { $('#pml-notes-ta').value = ''; }
+  })();
+
+  $('#pml-notes-btn').addEventListener('click', () => {
+    const hidden = notesPanel.style.display === 'none';
+    notesPanel.style.display = hidden ? '' : 'none';
+    $('#pml-notes-btn').classList.toggle('active', hidden);
+  });
+
+  $('#pml-notes-close').addEventListener('click', () => {
+    notesPanel.style.display = 'none';
+    $('#pml-notes-btn').classList.remove('active');
+  });
+
+  let notesDebounce;
+  $('#pml-notes-ta').addEventListener('input', () => {
+    clearTimeout(notesDebounce);
+    notesDebounce = setTimeout(() => {
+      const text = $('#pml-notes-ta').value;
+      if (text) {
+        // Encode </script> sequences so the tag never closes prematurely.
+        ensureNotesScript().textContent = JSON.stringify(text).replace(/</g, '\\u003c');
+      } else {
+        const s = document.querySelector('script[type="text/pml-notes"]');
+        if (s) s.remove();
+      }
+      setDirty(true);
+    }, 400);
+  });
 
   fit();
   loadComments();

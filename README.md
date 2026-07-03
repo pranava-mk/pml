@@ -5,6 +5,14 @@
 🌐 **[presentations-markup-language.vercel.app](https://presentations-markup-language.vercel.app)** · ⚡ **[Try the app — no install](https://presentations-markup-language.vercel.app/app/)** Plain HTML slides with visual editing, comments, presenter mode, and live reload — built to sit inside the AI coding workflow you already use.
 
 ```bash
+npx pmlkit new my-deck
+cd my-deck && npx pmlkit serve
+# CLI is `pml` when installed globally: npm i -g pmlkit
+```
+
+Or from a local clone:
+
+```bash
 node bin/pml.js new my-deck
 cd my-deck && node ../bin/pml.js serve
 # → http://localhost:4321

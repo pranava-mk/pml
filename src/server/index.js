@@ -40,7 +40,54 @@ const FAVICON = `<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(
   `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237c6cff'/><stop offset='1' stop-color='%23ff6ec7'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='32' y='44' font-family='monospace' font-size='34' font-weight='700' text-anchor='middle' fill='%230a0a0f'>p</text></svg>`
 )}">`;
 
-const BLANK_SLIDE = `<!doctype html>
+// Slide layouts — theme-class based with inline fallbacks so they work on any deck theme.
+const LAYOUTS = {
+  blank: { label: 'Blank', body: `` },
+  content: {
+    label: 'Content',
+    body: `  <p class="kicker">Section</p>
+  <h2 class="heading">New slide</h2>
+  <p class="subtitle">Double-click to edit, or use ＋ Insert in the toolbar.</p>` },
+  title: {
+    label: 'Title',
+    body: `  <p class="kicker">Kicker line</p>
+  <h1 class="title">Big statement<br>goes here</h1>
+  <p class="subtitle">Supporting line under the headline.</p>` },
+  section: {
+    label: 'Section break',
+    body: `  <div style="text-align:center">
+    <h1 class="title">Part one</h1>
+    <p class="subtitle">A breather between chapters.</p>
+  </div>` },
+  'two-col': {
+    label: 'Two columns',
+    body: `  <h2 class="heading">Two columns</h2>
+  <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+    <ul class="bullets">
+      <li>First point</li>
+      <li>Second point</li>
+      <li>Third point</li>
+    </ul>
+    <div class="card" style="border:1px solid rgba(128,128,128,.35);border-radius:16px;padding:26px 30px">
+      <h3 style="margin:0 0 10px">Card title</h3>
+      <p style="margin:0;opacity:.7">Card body text.</p>
+    </div>
+  </div>` },
+  quote: {
+    label: 'Quote',
+    body: `  <p style="font-size:52px;line-height:1.3;font-style:italic;margin:0 0 28px;max-width:1000px">&ldquo;The best way to predict the future is to ship it.&rdquo;</p>
+  <p class="subtitle">— Someone quotable</p>` },
+  stats: {
+    label: 'Stats',
+    body: `  <h2 class="heading">The numbers</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:36px">
+    <div><p style="font-size:64px;font-weight:800;margin:0">42%</p><p class="subtitle" style="font-size:18px">First metric that matters</p></div>
+    <div><p style="font-size:64px;font-weight:800;margin:0">3.1x</p><p class="subtitle" style="font-size:18px">Second metric</p></div>
+    <div><p style="font-size:64px;font-weight:800;margin:0">#1</p><p class="subtitle" style="font-size:18px">Third metric</p></div>
+  </div>` },
+};
+
+const slideFromLayout = (layout) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -49,9 +96,7 @@ const BLANK_SLIDE = `<!doctype html>
 </head>
 <body>
 <div class="slide">
-  <p class="kicker">Section</p>
-  <h2 class="heading">New slide</h2>
-  <p class="subtitle">Double-click to edit, or use ＋ Insert in the toolbar.</p>
+${(LAYOUTS[layout] || LAYOUTS.content).body}
 </div>
 </body>
 </html>
@@ -220,6 +265,34 @@ export async function startServer({ deckDir, port = 4321 }) {
     if (ev.type === 'change' && ev.file.startsWith(${JSON.stringify(prefix)})) location.reload();
   };`;
 
+  // ---------- print (PDF via browser print dialog) ----------
+
+  const printPage = async (ctx) => {
+    const meta = await deckMeta(ctx);
+    const slides = await listSlides(ctx);
+    const pages = slides.map((f) =>
+      `<div class="pg"><iframe src="${ctx.base}/slides/${encodeURIComponent(f)}" scrolling="no"></iframe></div>`).join('');
+    return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>${esc(meta.title || 'deck')} — print</title>
+${FAVICON}
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  html, body { margin: 0; background: #444; }
+  .pg { width: 1280px; height: 720px; overflow: hidden; page-break-after: always; break-after: page; margin: 0 auto; }
+  iframe { width: 1280px; height: 720px; border: 0; display: block; }
+  @media screen { .pg { margin: 24px auto; box-shadow: 0 8px 30px rgba(0,0,0,.5); } }
+</style></head><body>
+${pages}
+<script>
+  let left = document.querySelectorAll('iframe').length;
+  document.querySelectorAll('iframe').forEach((f) => f.addEventListener('load', () => {
+    if (--left === 0) setTimeout(() => print(), 600);
+  }));
+</script>
+</body></html>`;
+  };
+
   // ---------- hub page ----------
 
   const hubPage = async () => {
@@ -301,7 +374,7 @@ ${FAVICON}
     const cards = slides
       .map(
         (f, i) => `
-      <div class="card" data-file="${esc(f)}">
+      <div class="card" data-file="${esc(f)}" draggable="true">
         <a class="thumb-link" href="${b}/edit/${encodeURIComponent(f)}" aria-label="Edit slide ${i + 1}">
           <div class="thumb"><iframe src="${b}/slides/${encodeURIComponent(f)}" loading="lazy" tabindex="-1" scrolling="no"></iframe></div>
         </a>
@@ -321,6 +394,7 @@ ${FAVICON}
 <title>${esc(meta.title || 'pml deck')}</title>
 ${FAVICON}
 <link rel="stylesheet" href="/_pml/app.css">
+<style>.card.dragging{opacity:.4;outline:2px dashed #7c6cff}</style>
 </head><body class="pml-app">
 <header class="topbar">
   <div class="brand">
@@ -330,15 +404,24 @@ ${FAVICON}
   </div>
   <nav>
     <span class="hint">${slides.length} slide${slides.length === 1 ? '' : 's'} · click a slide to edit · click its name to rename</span>
+    <a class="btn" href="${b}/print" target="_blank" title="Print / save as PDF">⎙ PDF</a>
     <a class="btn" href="${b}/export?download=1" title="Download the whole deck as one self-contained HTML file">⇩ Export</a>
     <a class="btn primary" href="${b}/present">▶ Present</a>
   </nav>
 </header>
-<main class="grid">${cards || '<p class="empty">No slides yet — click <b>＋ New slide</b>.</p>'}
+<main class="grid" id="slide-grid">${cards || '<p class="empty">No slides yet — click <b>＋ New slide</b>.</p>'}
   <button class="card new-card" id="new-slide" aria-label="Add new slide"><span>＋</span>New slide</button>
 </main>
+<div class="pml-modal" id="layout-modal" hidden>
+  <div class="pml-modal-box">
+    <h2>Choose a layout</h2>
+    <div id="layout-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0 8px"></div>
+    <div class="row"><button class="btn" id="layout-cancel">Cancel</button></div>
+  </div>
+</div>
 <script>
   const BASE = ${jsonForScript(b)};
+  const LAYOUT_LIST = ${jsonForScript(Object.entries(LAYOUTS).map(([id, l]) => ({ id, label: l.label })))};
   function fitThumbs() {
     document.querySelectorAll('.thumb').forEach((t) => {
       const f = t.querySelector('iframe');
@@ -349,7 +432,25 @@ ${FAVICON}
   fitThumbs();
   const slideAction = (body) =>
     fetch(BASE + '/api/slide', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  document.getElementById('new-slide').addEventListener('click', () => slideAction({ action: 'new' }));
+
+  // Layout picker modal
+  const layoutModal = document.getElementById('layout-modal');
+  const layoutGrid = document.getElementById('layout-grid');
+  LAYOUT_LIST.forEach(({ id, label }) => {
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.textContent = label;
+    btn.style.cssText = 'min-height:64px;padding:16px 20px;width:100%;font-size:15px';
+    btn.setAttribute('aria-label', 'New slide with ' + label + ' layout');
+    btn.addEventListener('click', () => { slideAction({ action: 'new', layout: id }); layoutModal.hidden = true; });
+    layoutGrid.appendChild(btn);
+  });
+  document.getElementById('layout-cancel').addEventListener('click', () => { layoutModal.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') layoutModal.hidden = true; });
+  document.getElementById('new-slide').addEventListener('click', () => {
+    layoutModal.hidden = false;
+    layoutGrid.querySelector('button')?.focus();
+  });
   document.querySelectorAll('.icon-btn[data-act]').forEach((btn) =>
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -363,6 +464,37 @@ ${FAVICON}
       slideAction({ action: btn.dataset.act, file });
     })
   );
+  // drag-to-reorder slides
+  const origOrder = ${jsonForScript(slides)};
+  const grid = document.getElementById('slide-grid');
+  let dragSrc = null;
+  document.querySelectorAll('.card[data-file]').forEach((card) => {
+    card.addEventListener('dragstart', (e) => {
+      dragSrc = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', '');
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      const newOrder = [...document.querySelectorAll('.card[data-file]')].map((c) => c.dataset.file);
+      if (JSON.stringify(newOrder) !== JSON.stringify(origOrder)) {
+        slideAction({ action: 'reorder', order: newOrder });
+      }
+      dragSrc = null;
+    });
+    card.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === card) return;
+      const rect = card.getBoundingClientRect();
+      if (e.clientX < rect.left + rect.width / 2) {
+        grid.insertBefore(dragSrc, card);
+      } else {
+        grid.insertBefore(dragSrc, card.nextElementSibling);
+      }
+    });
+  });
+
   // slide rename: click name → inline input
   document.querySelectorAll('.name.rename').forEach((span) => {
     const start = () => {
@@ -410,11 +542,12 @@ ${FAVICON}
 <link rel="stylesheet" href="/_pml/app.css">
 </head><body class="pml-present">
 <div id="stage"><div id="frame-holder"></div></div>
-<div id="hud"><span id="counter"></span><span class="hud-hint">← → navigate · F fullscreen · Esc overview</span></div>
+<div id="hud"><span id="counter"></span><span class="hud-hint">← → navigate · F fullscreen · Esc overview · N notes</span></div>
 <script>
   const BASE = ${jsonForScript(b)};
   const slides = ${jsonForScript(slides)};
   const transition = ${jsonForScript(meta.transition || 'slide')};
+  const channel = new BroadcastChannel('pml-present:' + BASE);
   let idx = Math.max(0, slides.indexOf(new URLSearchParams(location.search).get('slide')));
   const holder = document.getElementById('frame-holder');
   const counter = document.getElementById('counter');
@@ -444,6 +577,7 @@ ${FAVICON}
     }
     counter.textContent = (idx + 1) + ' / ' + slides.length;
     history.replaceState(null, '', BASE + '/present?slide=' + encodeURIComponent(slides[idx]));
+    channel.postMessage({ idx });
   }
   function nav(d) {
     if (d > 0 && idx < slides.length - 1) { idx++; show(1); }
@@ -454,6 +588,7 @@ ${FAVICON}
     else if (e.key === 'ArrowLeft' || e.key === 'PageUp') nav(-1);
     else if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
     else if (e.key === 'Escape') location.href = BASE + '/';
+    else if (e.key === 'n' || e.key === 'N') window.open(BASE + '/presenter', 'pml-presenter');
   });
   let tx = null;
   addEventListener('touchstart', (e) => (tx = e.touches[0].clientX), { passive: true });
@@ -463,12 +598,159 @@ ${FAVICON}
     tx = null;
     if (Math.abs(dx) > 50) nav(dx < 0 ? 1 : -1);
   }, { passive: true });
+  channel.onmessage = (e) => {
+    if (typeof e.data.go === 'number') nav(e.data.go);
+    else if (e.data.sync) channel.postMessage({ idx });
+  };
   addEventListener('resize', fit);
   fit(); show();
   new EventSource('/events').onmessage = (e) => {
     const ev = JSON.parse(e.data);
     if (ev.type === 'change' && ev.file.endsWith(slides[idx])) show();
   };
+</script>
+</body></html>`;
+  };
+
+  const presenterPage = async (ctx) => {
+    const meta = await deckMeta(ctx);
+    const slides = await listSlides(ctx);
+    const b = ctx.base;
+
+    // Extract speaker notes from each slide file
+    const notes = [];
+    for (const f of slides) {
+      try {
+        const content = await fsp.readFile(path.join(ctx.slidesDir, f), 'utf8');
+        const m = content.match(/<script type="text\/pml-notes"[^>]*>([\s\S]*?)<\/script>/);
+        notes.push(m ? (() => { try { return JSON.parse(m[1]); } catch { return ''; } })() : '');
+      } catch {
+        notes.push('');
+      }
+    }
+
+    return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(meta.title || 'pml')} — presenter</title>
+${FAVICON}
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0a0a0f; color: #eeeef4; font-family: system-ui, sans-serif; overflow: hidden; }
+  .layout { display: grid; grid-template-columns: 1fr 390px; height: 100vh; }
+  .main-panel { display: flex; flex-direction: column; padding: 20px 12px 20px 20px; gap: 10px; }
+  .panel-label { font-size: 11px; color: #8b8ba3; text-transform: uppercase; letter-spacing: .08em; }
+  .current-box { flex: 1; position: relative; background: #16161f; border-radius: 10px; overflow: hidden; border: 1px solid #26263a; min-height: 0; }
+  .current-box iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; border: 0; transform-origin: top left; }
+  .right-panel { display: flex; flex-direction: column; gap: 10px; padding: 20px 20px 20px 8px; overflow: hidden; }
+  .next-box { position: relative; background: #16161f; border-radius: 8px; overflow: hidden; border: 1px solid #26263a; flex-shrink: 0; height: 152px; }
+  .next-box iframe { position: absolute; top: 0; left: 0; width: 1280px; height: 720px; border: 0; transform-origin: top left; }
+  .notes-box { flex: 1; background: #16161f; border: 1px solid #26263a; border-radius: 8px; padding: 14px 16px; overflow-y: auto; font-size: 18px; line-height: 1.7; color: #eeeef4; min-height: 0; }
+  .notes-box.muted { color: #8b8ba3; font-style: italic; }
+  .timer { font-size: 48px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: .04em; text-align: center; cursor: pointer; user-select: none; padding: 6px; border-radius: 8px; flex-shrink: 0; transition: background .15s; }
+  .timer:hover { background: #16161f; }
+  .bottom-row { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .counter-txt { font-size: 20px; font-weight: 600; color: #8b8ba3; }
+  .nav-btns { display: flex; gap: 8px; }
+  .nav-btn { background: #16161f; border: 1px solid #26263a; color: #eeeef4; border-radius: 7px; padding: 7px 16px; font-size: 16px; cursor: pointer; transition: background .15s, border-color .15s; }
+  .nav-btn:hover { background: #26263a; border-color: #7c6cff; }
+</style>
+</head><body>
+<div class="layout">
+  <div class="main-panel">
+    <div class="panel-label">Current slide</div>
+    <div class="current-box" id="current-box">
+      <iframe id="current-frame" scrolling="no" tabindex="-1" aria-label="Current slide preview"></iframe>
+    </div>
+  </div>
+  <div class="right-panel">
+    <div class="panel-label">Next slide</div>
+    <div class="next-box" id="next-box">
+      <iframe id="next-frame" scrolling="no" tabindex="-1" aria-label="Next slide preview"></iframe>
+    </div>
+    <div class="panel-label">Notes</div>
+    <div class="notes-box" id="notes-box" aria-live="polite"></div>
+    <div class="timer" id="timer" role="button" tabindex="0" aria-label="Elapsed time — click to reset">00:00</div>
+    <div class="bottom-row">
+      <span class="counter-txt" id="counter-txt"></span>
+      <div class="nav-btns">
+        <button class="nav-btn" id="btn-prev" aria-label="Previous slide">←</button>
+        <button class="nav-btn" id="btn-next" aria-label="Next slide">→</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  const BASE = ${jsonForScript(b)};
+  const slides = ${jsonForScript(slides)};
+  const notes = ${jsonForScript(notes)};
+  let idx = 0;
+
+  const currentFrame = document.getElementById('current-frame');
+  const nextFrame = document.getElementById('next-frame');
+  const currentBox = document.getElementById('current-box');
+  const nextBox = document.getElementById('next-box');
+  const notesBox = document.getElementById('notes-box');
+  const timerEl = document.getElementById('timer');
+  const counterTxt = document.getElementById('counter-txt');
+
+  function fitFrame(box, frame) {
+    const s = Math.min(box.clientWidth / 1280, box.clientHeight / 720);
+    frame.style.transform = 'scale(' + s + ')';
+    frame.style.left = Math.max(0, (box.clientWidth - 1280 * s) / 2) + 'px';
+    frame.style.top = Math.max(0, (box.clientHeight - 720 * s) / 2) + 'px';
+  }
+  function fitAll() {
+    fitFrame(currentBox, currentFrame);
+    fitFrame(nextBox, nextFrame);
+  }
+
+  function update(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    currentFrame.src = BASE + '/slides/' + encodeURIComponent(slides[idx]);
+    const ni = idx + 1;
+    if (ni < slides.length) {
+      nextFrame.src = BASE + '/slides/' + encodeURIComponent(slides[ni]);
+      nextBox.style.opacity = '1';
+    } else {
+      nextFrame.src = 'about:blank';
+      nextBox.style.opacity = '0.35';
+    }
+    const note = notes[idx] || '';
+    notesBox.textContent = note || '(no notes for this slide)';
+    notesBox.classList.toggle('muted', !note);
+    counterTxt.textContent = (idx + 1) + ' / ' + slides.length;
+    fitAll();
+  }
+
+  // Timer
+  let startTime = Date.now();
+  function fmtTime(ms) {
+    const s = Math.floor(ms / 1000);
+    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+  }
+  setInterval(() => { timerEl.textContent = fmtTime(Date.now() - startTime); }, 500);
+  timerEl.addEventListener('click', () => { startTime = Date.now(); });
+  timerEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') startTime = Date.now(); });
+
+  // BroadcastChannel — receive {idx} from present window, send {go} to drive it
+  const channel = new BroadcastChannel('pml-present:' + BASE);
+  channel.onmessage = (e) => {
+    if (typeof e.data.idx === 'number') update(e.data.idx);
+  };
+
+  document.getElementById('btn-prev').addEventListener('click', () => channel.postMessage({ go: -1 }));
+  document.getElementById('btn-next').addEventListener('click', () => channel.postMessage({ go: 1 }));
+
+  addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight') channel.postMessage({ go: 1 });
+    else if (e.key === 'ArrowLeft') channel.postMessage({ go: -1 });
+  });
+
+  // Ask present window for current state on open
+  channel.postMessage({ sync: 1 });
+
+  addEventListener('resize', fitAll);
+  if (slides.length) update(0);
 </script>
 </body></html>`;
   };
@@ -567,12 +849,34 @@ ${FAVICON}
       return json(res, 200, { ok: true, meta });
     }
     if (sub === '/api/slide' && req.method === 'POST') {
-      const { action, file, name } = JSON.parse(await readBody(req));
+      const { action, file, name, layout, order } = JSON.parse(await readBody(req));
       if (action === 'new') {
-        const fname = await nextSlideName(ctx);
-        await writeOwn(path.join(ctx.slidesDir, fname), BLANK_SLIDE);
+        const fname = await nextSlideName(ctx, (layout && layout !== 'content' && LAYOUTS[layout]) ? layout : 'slide');
+        await writeOwn(path.join(ctx.slidesDir, fname), slideFromLayout(layout));
         broadcast({ type: 'change', file: ctx.evPrefix + 'slides/' + fname });
         return json(res, 200, { ok: true, file: fname });
+      }
+      if (action === 'reorder') {
+        const current = await listSlides(ctx);
+        if (!Array.isArray(order) || order.length !== current.length ||
+            [...order].sort().join() !== [...current].sort().join()) {
+          return json(res, 400, { error: 'order must be a permutation of current slides' });
+        }
+        // two-phase rename to avoid prefix collisions
+        const pad = String(order.length).length > 2 ? String(order.length).length : 2;
+        const finals = order.map((f, i) =>
+          String(i + 1).padStart(pad, '0') + '-' + f.replace(/^\d+-/, ''));
+        for (let i = 0; i < order.length; i++) {
+          const tmp = path.join(ctx.slidesDir, '.reorder-' + i + '.tmp');
+          ownWrites.set(path.join(ctx.slidesDir, order[i]), Date.now());
+          await fsp.rename(path.join(ctx.slidesDir, order[i]), tmp);
+        }
+        for (let i = 0; i < finals.length; i++) {
+          ownWrites.set(path.join(ctx.slidesDir, finals[i]), Date.now());
+          await fsp.rename(path.join(ctx.slidesDir, '.reorder-' + i + '.tmp'), path.join(ctx.slidesDir, finals[i]));
+        }
+        broadcast({ type: 'change', file: ctx.evPrefix + 'slides/' });
+        return json(res, 200, { ok: true, slides: finals });
       }
       const abs = safeSlidePath(ctx, file || '');
       if (!abs || !fs.existsSync(abs)) return json(res, 400, { error: 'bad file' });
@@ -662,6 +966,8 @@ ${FAVICON}
     // Pages
     if (sub === '/' || sub === '') return page(res, await overviewPage(ctx));
     if (sub === '/present') return page(res, await presentPage(ctx));
+    if (sub === '/presenter') return page(res, await presenterPage(ctx));
+    if (sub === '/print') return page(res, await printPage(ctx));
     if (sub === '/export') {
       const meta = await deckMeta(ctx);
       const html = await exportPage(ctx);

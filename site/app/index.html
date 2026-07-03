@@ -166,6 +166,11 @@
     .topbar { padding: 14px 16px; }
     .grid { padding: 16px; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
   }
+  .card.dragging { opacity: .4; outline: 2px dashed var(--accent); }
+  .layout-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0; }
+  @media (max-width: 600px) { .layout-grid { grid-template-columns: repeat(2, 1fr); } }
+  .layout-btn { min-height: 64px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--text); font: 500 15px 'Space Grotesk', sans-serif; cursor: pointer; transition: border-color 0.18s; text-align: center; }
+  .layout-btn:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -177,6 +182,13 @@
     <h2>New deck</h2>
     <input id="deck-name" placeholder="Deck name (e.g. Q3 Review)" autocomplete="off">
     <div class="row"><button class="btn" id="modal-cancel">Cancel</button><button class="btn primary" id="modal-create">Create</button></div>
+  </div>
+</div>
+<div class="modal" id="layout-modal" hidden>
+  <div class="modal-box" style="width:min(540px,92vw)">
+    <h2>Choose a layout</h2>
+    <div class="layout-grid" id="layout-grid"></div>
+    <div class="row"><button class="btn" id="layout-cancel">Cancel</button></div>
   </div>
 </div>
 
@@ -289,6 +301,53 @@ ${body}
     return String((nums.length ? Math.max(...nums) : 0) + 1).padStart(2, '0') + '-' + slug + '.html';
   };
 
+  // ---------- layouts ----------
+  const LAYOUTS = {
+    blank: { label: 'Blank', body: `` },
+    content: {
+      label: 'Content',
+      body: `  <p class="kicker">Section</p>
+  <h2 class="heading">New slide</h2>
+  <p class="subtitle">Double-click to edit, or use ＋ Insert in the toolbar.</p>` },
+    title: {
+      label: 'Title',
+      body: `  <p class="kicker">Kicker line</p>
+  <h1 class="title">Big statement<br>goes here</h1>
+  <p class="subtitle">Supporting line under the headline.</p>` },
+    section: {
+      label: 'Section break',
+      body: `  <div style="text-align:center">
+    <h1 class="title">Part one</h1>
+    <p class="subtitle">A breather between chapters.</p>
+  </div>` },
+    'two-col': {
+      label: 'Two columns',
+      body: `  <h2 class="heading">Two columns</h2>
+  <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center">
+    <ul class="bullets">
+      <li>First point</li>
+      <li>Second point</li>
+      <li>Third point</li>
+    </ul>
+    <div class="card" style="border:1px solid rgba(128,128,128,.35);border-radius:16px;padding:26px 30px">
+      <h3 style="margin:0 0 10px">Card title</h3>
+      <p style="margin:0;opacity:.7">Card body text.</p>
+    </div>
+  </div>` },
+    quote: {
+      label: 'Quote',
+      body: `  <p style="font-size:52px;line-height:1.3;font-style:italic;margin:0 0 28px;max-width:1000px">&ldquo;The best way to predict the future is to ship it.&rdquo;</p>
+  <p class="subtitle">— Someone quotable</p>` },
+    stats: {
+      label: 'Stats',
+      body: `  <h2 class="heading">The numbers</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:36px">
+    <div><p style="font-size:64px;font-weight:800;margin:0">42%</p><p class="subtitle" style="font-size:18px">First metric that matters</p></div>
+    <div><p style="font-size:64px;font-weight:800;margin:0">3.1x</p><p class="subtitle" style="font-size:18px">Second metric</p></div>
+    <div><p style="font-size:64px;font-weight:800;margin:0">#1</p><p class="subtitle" style="font-size:18px">Third metric</p></div>
+  </div>` },
+  };
+
   // ---------- routing ----------
   const view = document.getElementById('view');
   const frameView = document.getElementById('frame-view');
@@ -373,7 +432,7 @@ ${body}
   function renderOverview(slug) {
     const d = state.decks[slug];
     const cards = d.slides.map((s, i) => `
-      <div class="card" data-file="${esc(s.name)}">
+      <div class="card" data-file="${esc(s.name)}" draggable="true">
         <a class="thumb-link" href="#/d/${encodeURIComponent(slug)}/edit/${encodeURIComponent(s.name)}" aria-label="Edit slide ${i + 1}">
           <div class="thumb"><iframe sandbox="allow-same-origin" tabindex="-1" scrolling="no"></iframe></div>
         </a>
@@ -407,12 +466,7 @@ ${body}
       card.querySelector('iframe').srcdoc = renderable(d, s.html);
     });
     fitThumbs();
-    document.getElementById('new-slide').addEventListener('click', () => {
-      d.slides.push({ name: nextSlideName(d), html: slideDoc('New slide', `  <p class="kicker">Section</p>
-  <h2 class="heading">New slide</h2>
-  <p class="subtitle">Double-click to edit, or use ＋ Insert in the toolbar.</p>`) });
-      persist(); route();
-    });
+    document.getElementById('new-slide').addEventListener('click', () => openLayoutModal(slug));
     view.querySelectorAll('[data-dup]').forEach((b) =>
       b.addEventListener('click', () => {
         const s = d.slides.find((x) => x.name === b.dataset.dup);
@@ -459,6 +513,41 @@ ${body}
     titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
     titleEl.addEventListener('blur', () => { d.title = titleEl.textContent.trim() || d.title; persist(); });
     document.getElementById('export-deck').addEventListener('click', () => exportDeck(slug));
+    // drag-to-reorder slides
+    const slideGrid = view.querySelector('.grid');
+    let dragSrc = null;
+    view.querySelectorAll('.card[data-file]').forEach((card) => {
+      card.addEventListener('dragstart', (e) => {
+        dragSrc = card;
+        card.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        const newOrder = [...view.querySelectorAll('.card[data-file]')].map((c) => c.dataset.file);
+        const oldOrder = d.slides.map((s) => s.name);
+        if (JSON.stringify(newOrder) !== JSON.stringify(oldOrder)) {
+          d.slides = newOrder.map((name) => d.slides.find((s) => s.name === name));
+          d.slides.forEach((s, i) => {
+            s.name = String(i + 1).padStart(2, '0') + '-' + s.name.replace(/^\d+-/, '');
+          });
+          persist();
+          route();
+        }
+        dragSrc = null;
+      });
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!dragSrc || dragSrc === card) return;
+        const rect = card.getBoundingClientRect();
+        if (e.clientX < rect.left + rect.width / 2) {
+          slideGrid.insertBefore(dragSrc, card);
+        } else {
+          slideGrid.insertBefore(dragSrc, card.nextElementSibling);
+        }
+      });
+    });
   }
 
   // ---------- editor ----------
@@ -663,6 +752,35 @@ addEventListener('resize',fit);fit();show();
   document.getElementById('modal-cancel').addEventListener('click', () => (modal.hidden = true));
   document.getElementById('modal-create').addEventListener('click', createDeck);
   nameIn.addEventListener('keydown', (e) => { if (e.key === 'Enter') createDeck(); if (e.key === 'Escape') modal.hidden = true; });
+
+  // ---------- layout picker ----------
+  const layoutModal = document.getElementById('layout-modal');
+  const layoutGridEl = document.getElementById('layout-grid');
+  let currentLayoutSlug = null;
+  function openLayoutModal(slug) {
+    currentLayoutSlug = slug;
+    layoutModal.hidden = false;
+    layoutGridEl.querySelector('button')?.focus();
+  }
+  Object.entries(LAYOUTS).forEach(([id, l]) => {
+    const btn = document.createElement('button');
+    btn.className = 'layout-btn';
+    btn.textContent = l.label;
+    btn.setAttribute('aria-label', 'New slide: ' + l.label);
+    btn.addEventListener('click', () => {
+      if (!currentLayoutSlug) return;
+      const d = state.decks[currentLayoutSlug];
+      const nameSlug = (id === 'content' || id === 'blank') ? 'slide' : id;
+      d.slides.push({ name: nextSlideName(d, nameSlug), html: slideDoc(l.label, l.body) });
+      persist();
+      layoutModal.hidden = true;
+      route();
+    });
+    layoutGridEl.appendChild(btn);
+  });
+  document.getElementById('layout-cancel').addEventListener('click', () => { layoutModal.hidden = true; });
+  layoutModal.addEventListener('click', (e) => { if (e.target === layoutModal) layoutModal.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !layoutModal.hidden) layoutModal.hidden = true; });
 
   route();
 })();

@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  syntax:
+    name: Syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check bin/pml.js syntax
+        run: node --check bin/pml.js
+      - name: Check src/editor/editor.js syntax
+        run: node --check src/editor/editor.js
+      - name: Import src/server/index.js
+        run: node -e "import('./src/server/index.js').then(() => console.log('ok'))"
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    env:
+      PML_BROWSER: chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: browser-actions/setup-chrome@v1
+      - name: Run test suite
+        run: npm test

@@ -1,7 +1,7 @@
 {
-  "name": "pml",
-  "version": "0.1.0",
-  "description": "Presentations as plain HTML files. Visual editing, comments, live reload \u2014 built to sit inside AI coding workflows.",
+  "name": "pmlkit",
+  "version": "0.2.0",
+  "description": "Presentations as plain HTML files — visual editor, comments, presenter mode, live reload. AI-native, zero dependencies.",
   "type": "module",
   "bin": {
     "pml": "bin/pml.js"
@@ -9,9 +9,35 @@
   "scripts": {
     "start": "node bin/pml.js serve examples",
     "demo": "node bin/pml.js serve examples",
-    "demo:deck": "node bin/pml.js serve examples/launch",
-    "sync-app": "cp src/editor/editor.js src/editor/editor.css site/app/"
+    "sync-app": "cp src/editor/editor.js src/editor/editor.css site/app/",
+    "test": "node tests/run.mjs"
   },
+  "keywords": [
+    "presentations",
+    "slides",
+    "html",
+    "deck",
+    "powerpoint-alternative",
+    "claude",
+    "ai",
+    "markup"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pranava-mk/pml.git"
+  },
+  "homepage": "https://presentations-markup-language.vercel.app",
+  "bugs": {
+    "url": "https://github.com/pranava-mk/pml/issues"
+  },
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "integration",
+    "README.md",
+    "LICENSE"
+  ],
   "engines": {
     "node": ">=20"
   },

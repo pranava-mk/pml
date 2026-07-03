@@ -400,3 +400,54 @@ body.pml-comment-mode .slide, body.pml-comment-mode .slide * { cursor: crosshair
   font: 13px 'Space Grotesk', system-ui, sans-serif;
 }
 .pml-menu button:hover { background: #24243a; color: #fff; }
+
+/* ---------- speaker notes panel ---------- */
+.pml-notes-panel {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, 90vw);
+  background: #12121c;
+  border: 1px solid #2b2b42;
+  border-radius: 14px;
+  padding: 12px 14px;
+  z-index: 99992;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  color: #eeeef4;
+  box-shadow: 0 10px 36px rgba(0, 0, 0, 0.5);
+}
+.pml-notes-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #8b8ba3;
+  margin-bottom: 8px;
+}
+.pml-notes-head button {
+  background: none;
+  border: none;
+  color: #8b8ba3;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+}
+.pml-notes-head button:hover { color: #cfcfe2; }
+#pml-notes-ta {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: #0d0d16;
+  border: 1px solid #2b2b42;
+  border-radius: 8px;
+  color: #eeeef4;
+  padding: 10px;
+  min-height: 90px;
+  resize: vertical;
+  font: 13.5px 'Space Grotesk', system-ui, sans-serif;
+  outline: none;
+}
+#pml-notes-ta:focus { border-color: #7c6cff; }
+#pml-notes-ta::placeholder { color: #4b4b6b; }
