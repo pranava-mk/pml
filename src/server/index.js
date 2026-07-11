@@ -14,6 +14,15 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const EDITOR_DIR = path.resolve(__dirname, '../editor');
 const TEMPLATE_DIR = path.resolve(__dirname, '../../templates/deck');
+const THEMES_DIR = path.resolve(__dirname, '../../templates/themes');
+
+// Load themes manifest once at startup (zero-dep: sync read is fine here).
+let THEME_MANIFEST = [];
+try {
+  THEME_MANIFEST = JSON.parse(fs.readFileSync(path.join(THEMES_DIR, 'themes.json'), 'utf8'));
+} catch {
+  THEME_MANIFEST = [];
+}
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -405,6 +414,7 @@ ${FAVICON}
   <nav>
     <span class="hint">${slides.length} slide${slides.length === 1 ? '' : 's'} · click a slide to edit · click its name to rename</span>
     <a class="btn" href="${b}/print" target="_blank" title="Print / save as PDF">⎙ PDF</a>
+    <button class="btn" id="theme-btn" aria-label="Switch deck theme">🎨 Theme</button>
     <a class="btn" href="${b}/export?download=1" title="Download the whole deck as one self-contained HTML file">⇩ Export</a>
     <a class="btn primary" href="${b}/present">▶ Present</a>
   </nav>
@@ -417,6 +427,13 @@ ${FAVICON}
     <h2>Choose a layout</h2>
     <div id="layout-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0 8px"></div>
     <div class="row"><button class="btn" id="layout-cancel">Cancel</button></div>
+  </div>
+</div>
+<div class="pml-modal" id="theme-modal" hidden>
+  <div class="pml-modal-box" style="min-width:min(520px,92vw)">
+    <h2>Choose a theme</h2>
+    <div id="theme-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0 8px"></div>
+    <div class="row"><button class="btn" id="theme-cancel">Cancel</button></div>
   </div>
 </div>
 <script>
@@ -446,11 +463,37 @@ ${FAVICON}
     layoutGrid.appendChild(btn);
   });
   document.getElementById('layout-cancel').addEventListener('click', () => { layoutModal.hidden = true; });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') layoutModal.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { layoutModal.hidden = true; themeModal.hidden = true; } });
   document.getElementById('new-slide').addEventListener('click', () => {
     layoutModal.hidden = false;
     layoutGrid.querySelector('button')?.focus();
   });
+
+  // Theme picker modal
+  const THEME_LIST = ${jsonForScript(THEME_MANIFEST)};
+  const currentThemeName = ${jsonForScript(meta.theme || 'midnight')};
+  const themeModal = document.getElementById('theme-modal');
+  const themeGrid = document.getElementById('theme-grid');
+  THEME_LIST.forEach(({ id, label, swatch }) => {
+    const card = document.createElement('div');
+    const isActive = id === currentThemeName;
+    card.style.cssText = 'padding:14px 16px;border:2px solid ' + (isActive ? '#7c6cff' : 'rgba(128,128,128,.25)') + ';border-radius:12px;cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:border-color .15s';
+    card.innerHTML = '<span style="font-size:14px;font-weight:600">' + label + '</span><div style="display:flex;gap:6px">' +
+      swatch.map((hex) => '<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:' + hex + ';border:1px solid rgba(128,128,128,.3)"></span>').join('') + '</div>';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', 'Switch to ' + label + ' theme');
+    card.addEventListener('click', () => {
+      fetch(BASE + '/api/deck', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ theme: id }) });
+      themeModal.hidden = true;
+    });
+    card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
+    themeGrid.appendChild(card);
+  });
+  document.getElementById('theme-btn').addEventListener('click', () => { themeModal.hidden = false; });
+  document.getElementById('theme-cancel').addEventListener('click', () => { themeModal.hidden = true; });
+  themeModal.addEventListener('click', (e) => { if (e.target === themeModal) themeModal.hidden = true; });
+
   document.querySelectorAll('.icon-btn[data-act]').forEach((btn) =>
     btn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -845,6 +888,23 @@ ${FAVICON}
       const meta = await deckMeta(ctx);
       if (typeof body.title === 'string' && body.title.trim()) meta.title = body.title.trim().slice(0, 120);
       if (['slide', 'fade', 'none'].includes(body.transition)) meta.transition = body.transition;
+      if (body.theme !== undefined) {
+        const preset = THEME_MANIFEST.find((t) => t.id === body.theme);
+        if (!preset) return json(res, 400, { error: 'unknown theme id' });
+        const themeCss = await fsp.readFile(path.join(THEMES_DIR, body.theme + '.css'), 'utf8');
+        const trashDir = path.join(ctx.dir, '.trash');
+        await fsp.mkdir(trashDir, { recursive: true });
+        const themePath = path.join(ctx.dir, 'theme.css');
+        try {
+          const old = await fsp.readFile(themePath, 'utf8');
+          await fsp.writeFile(path.join(trashDir, 'theme-' + Date.now() + '.css'), old);
+        } catch { /* no existing theme.css to back up */ }
+        await writeOwn(themePath, themeCss);
+        meta.theme = body.theme;
+        // writeOwn suppresses the watcher; broadcast manually so the editor's
+        // CSS-bust reload path picks up the new theme immediately.
+        broadcast({ type: 'change', file: ctx.evPrefix + 'theme.css' });
+      }
       await writeOwn(path.join(ctx.dir, 'deck.json'), JSON.stringify(meta, null, 2) + '\n');
       return json(res, 200, { ok: true, meta });
     }
@@ -1031,6 +1091,11 @@ ${FAVICON}
         const abs = path.resolve(EDITOR_DIR, p.slice('/_pml/'.length));
         if (abs.startsWith(EDITOR_DIR) && (await sendFile(res, abs))) return;
         return json(res, 404, { error: 'not found' });
+      }
+
+      // Theme manifest (global — same presets for every deck)
+      if (p === '/api/themes' && req.method === 'GET') {
+        return json(res, 200, { themes: THEME_MANIFEST });
       }
 
       if (hubMode) {

@@ -45,6 +45,7 @@
   const SNAP_DIST = 6; // smart-guide magnet distance (slide px)
 
   let selected = null;
+  let extraSel = [];
   let dirty = false;
   let commentMode = false;
   let snapOn = true;
@@ -170,7 +171,8 @@
   // ---------- zoom to fit ----------
 
   const fit = () => {
-    const s = Math.min((innerWidth - 96) / 1280, (innerHeight - 170) / 720, 1);
+    const railW = document.documentElement.classList.contains('pml-rail-open') ? 268 : 0;
+    const s = Math.min((innerWidth - 96 - railW) / 1280, (innerHeight - 170) / 720, 1);
     document.documentElement.style.setProperty('--pml-zoom', s);
     updateResizer();
   };
@@ -192,17 +194,7 @@
       <button class="pml-btn" id="pml-undo" title="Undo (Ctrl+Z)">↶</button>
       <button class="pml-btn" id="pml-redo" title="Redo (Ctrl+Shift+Z)">↷</button>
       <button class="pml-btn active" id="pml-snap" title="Snap to grid & guides (hold Alt to bypass)">🧲</button>
-      <div class="pml-menu-wrap">
-        <button class="pml-btn" id="pml-insert" title="Insert element">＋ Insert</button>
-        <div class="pml-menu" id="pml-insert-menu">
-          <button data-pml-ui data-ins="heading">Heading</button>
-          <button data-pml-ui data-ins="text">Text</button>
-          <button data-pml-ui data-ins="bullets">Bullet list</button>
-          <button data-pml-ui data-ins="card">Card</button>
-          <button data-pml-ui data-ins="image-url">Image from URL…</button>
-          <button data-pml-ui data-ins="image-upload">Upload image…</button>
-        </div>
-      </div>
+      <button class="pml-btn" id="pml-insert" title="Insert element">＋ Insert</button>
     </div>
     <div class="pml-group pml-typo">
       <select id="pml-font" title="Font family" disabled>
@@ -218,6 +210,12 @@
       <button class="pml-btn" data-align="left" title="Align left" disabled>⇤</button>
       <button class="pml-btn" data-align="center" title="Align center" disabled>≡</button>
       <button class="pml-btn" data-align="right" title="Align right" disabled>⇥</button>
+      <button class="pml-btn" data-salign="l" title="Align to slide left" disabled>⊢</button>
+      <button class="pml-btn" data-salign="c" title="Center horizontally on slide" disabled>⫱</button>
+      <button class="pml-btn" data-salign="r" title="Align to slide right" disabled>⊣</button>
+      <button class="pml-btn" data-salign="t" title="Align to slide top" disabled>⊤</button>
+      <button class="pml-btn" data-salign="m" title="Center vertically on slide" disabled>⫲</button>
+      <button class="pml-btn" data-salign="b" title="Align to slide bottom" disabled>⊥</button>
       <select id="pml-fx" title="Entrance effect" disabled>
         <option value="">✨ Effect</option>
         ${FX_PRESETS.map((f) => `<option value="${f}">${f}</option>`).join('')}
@@ -288,12 +286,34 @@
     $('#pml-fx-delay').value = selected.style.getPropertyValue('--fx-delay') || '0s';
   };
 
+  const allSelected = () => (selected ? [selected, ...extraSel] : []);
+
+  const clearExtras = () => {
+    extraSel.forEach((n) => n.classList.remove('pml-selected'));
+    extraSel = [];
+  };
+
   const select = (node) => {
+    clearExtras();
     if (selected) selected.classList.remove('pml-selected');
+    if (node !== selected) savedRange = null; // stale text range from a previous edit
     selected = node;
     if (selected) selected.classList.add('pml-selected');
     syncToolbar();
     updateResizer();
+  };
+
+  // Shift-click: toggle membership in the extra selection set.
+  const addToSelection = (node) => {
+    if (!selected || node === selected || node === slideEl) return;
+    const i = extraSel.indexOf(node);
+    if (i >= 0) {
+      node.classList.remove('pml-selected');
+      extraSel.splice(i, 1);
+    } else {
+      node.classList.add('pml-selected');
+      extraSel.push(node);
+    }
   };
 
   const deselect = () => {
@@ -307,9 +327,16 @@
     const target = e.target.closest('.slide *:not([data-pml-ui])') ||
       (e.target.closest('.slide') ? slideEl : null);
     if (!target) return deselect();
+    if (e.shiftKey && selected && target !== slideEl) {
+      addToSelection(target);
+      return;
+    }
     if (target !== selected) {
       if (selected && selected.isContentEditable) endTextEdit(selected);
       select(target);
+    } else if (extraSel.length) {
+      // clicking primary without shift collapses back to single selection
+      clearExtras();
     }
     if (target !== slideEl && !target.isContentEditable) startDrag(e, target);
   });
@@ -409,6 +436,7 @@
   const startDrag = (e, node) => {
     const startX = e.clientX, startY = e.clientY;
     let moving = false, baseL = 0, baseT = 0, targets = null, w = 0, h = 0;
+    let group = null; // [{node, baseL, baseT}] for extra selected nodes
     const move = (ev) => {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
       if (!moving && Math.hypot(dx, dy) < 4) return;
@@ -423,6 +451,12 @@
         w = r0.width / s0;
         h = r0.height / s0;
         targets = snapTargets(node);
+        if (node === selected && extraSel.length) {
+          group = extraSel.map((n) => {
+            makeAbsolute(n);
+            return { node: n, baseL: parseFloat(n.style.left) || 0, baseT: parseFloat(n.style.top) || 0 };
+          });
+        }
         document.body.classList.add('pml-dragging');
       }
       const s = scaleFactor();
@@ -431,6 +465,14 @@
       else hideGuides();
       node.style.left = left + 'px';
       node.style.top = top + 'px';
+      if (group) {
+        // same snapped delta as the primary, so the group stays rigid
+        const gdx = left - baseL, gdy = top - baseT;
+        for (const g of group) {
+          g.node.style.left = g.baseL + gdx + 'px';
+          g.node.style.top = g.baseT + gdy + 'px';
+        }
+      }
       updateResizer();
     };
     const up = () => {
@@ -489,9 +531,57 @@
   const applyStyle = (prop, value, snapKey = 'style:' + prop) => {
     if (!selected) return;
     snapshot(snapKey);
-    selected.style[prop] = value;
+    allSelected().forEach((n) => (n.style[prop] = value));
     setDirty(true);
     updateResizer();
+  };
+
+  // ---------- text-range styling ----------
+
+  // Keep toolbar button clicks from stealing focus (and collapsing the text
+  // selection). Buttons ONLY — font select / size / color inputs need focus.
+  bar.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button')) e.preventDefault();
+  });
+
+  // execCommand emits <span style> instead of <font>/<b> where supported.
+  try { document.execCommand('styleWithCSS', false, true); } catch {}
+
+  // The color picker takes focus to open, collapsing the selection — remember
+  // the last range made inside an editable slide element so we can restore it.
+  let savedRange = null;
+  document.addEventListener('selectionchange', () => {
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed) return;
+    const a = sel.anchorNode;
+    const host = a && (a.nodeType === 1 ? a : a.parentElement);
+    if (host && host.isContentEditable && host.closest('.slide')) {
+      savedRange = sel.getRangeAt(0).cloneRange();
+    }
+  });
+
+  // Current selection Range iff it lives inside the selected editable element.
+  const activeTextRange = () => {
+    if (!selected || !selected.isContentEditable) return null;
+    const sel = window.getSelection();
+    if (!sel || !sel.rangeCount || sel.isCollapsed) return null;
+    if (!selected.contains(sel.anchorNode)) return null;
+    return sel.getRangeAt(0);
+  };
+
+  // Style a text range via execCommand; manual <span> wrap as fallback.
+  const styleRange = (range, cmd, value, prop, propValue) => {
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    let ok = false;
+    try { ok = document.execCommand(cmd, false, value); } catch {}
+    if (!ok) {
+      const span = document.createElement('span');
+      span.style[prop] = propValue;
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+    }
   };
 
   $('#pml-font').addEventListener('change', (e) => {
@@ -503,20 +593,73 @@
   $('#pml-size').addEventListener('input', (e) => applyStyle('fontSize', e.target.value + 'px'));
   $('#pml-bold').addEventListener('click', function () {
     if (!selected) return;
+    const range = activeTextRange();
+    if (range) {
+      snapshot('range:' + Math.random());
+      styleRange(range, 'bold', null, 'fontWeight', '700');
+      setDirty(true);
+      return;
+    }
     const isBold = parseInt(getComputedStyle(selected).fontWeight) >= 600;
     applyStyle('fontWeight', isBold ? '400' : '700');
     this.classList.toggle('active', !isBold);
   });
   $('#pml-italic').addEventListener('click', function () {
     if (!selected) return;
+    const range = activeTextRange();
+    if (range) {
+      snapshot('range:' + Math.random());
+      styleRange(range, 'italic', null, 'fontStyle', 'italic');
+      setDirty(true);
+      return;
+    }
     const isIt = getComputedStyle(selected).fontStyle === 'italic';
     applyStyle('fontStyle', isIt ? 'normal' : 'italic');
     this.classList.toggle('active', !isIt);
   });
-  $('#pml-color').addEventListener('input', (e) => applyStyle('color', e.target.value));
+  $('#pml-color').addEventListener('input', (e) => {
+    if (!selected) return;
+    // Focusing the picker collapsed the live selection — fall back to the
+    // range saved by the selectionchange listener if it is still ours.
+    let range = activeTextRange();
+    if (!range && savedRange && selected.contains(savedRange.commonAncestorContainer)) {
+      range = savedRange;
+    }
+    if (range) {
+      snapshot('range:' + Math.random());
+      styleRange(range, 'foreColor', e.target.value, 'color', e.target.value);
+      setDirty(true);
+      return;
+    }
+    applyStyle('color', e.target.value);
+  });
   $('#pml-bg').addEventListener('input', (e) => applyStyle('backgroundColor', e.target.value));
   bar.querySelectorAll('[data-align]').forEach((b) =>
     b.addEventListener('click', () => applyStyle('textAlign', b.dataset.align))
+  );
+
+  // Align to slide: position each selected node against the 1280×720 canvas.
+  bar.querySelectorAll('[data-salign]').forEach((b) =>
+    b.addEventListener('click', () => {
+      if (!selected) return;
+      snapshot('salign');
+      const a = b.dataset.salign;
+      allSelected().forEach((n) => {
+        if (n === slideEl) return;
+        makeAbsolute(n);
+        const s = scaleFactor();
+        const r = n.getBoundingClientRect();
+        const w = r.width / s, h = r.height / s;
+        if (a === 'l') n.style.left = '0px';
+        if (a === 'c') n.style.left = (1280 - w) / 2 + 'px';
+        if (a === 'r') n.style.left = 1280 - w + 'px';
+        if (a === 't') n.style.top = '0px';
+        if (a === 'm') n.style.top = (720 - h) / 2 + 'px';
+        if (a === 'b') n.style.top = 720 - h + 'px';
+      });
+      setDirty(true);
+      updateResizer();
+    })
   );
 
   $('#pml-fx').addEventListener('change', (e) => {
@@ -548,22 +691,27 @@
   $('#pml-dup').addEventListener('click', () => {
     if (!selected || selected === slideEl) return;
     snapshot('dup:' + Math.random());
-    const clone = selected.cloneNode(true);
-    clone.classList.remove('pml-selected');
-    if (clone.style.position === 'absolute') {
-      clone.style.left = (parseFloat(clone.style.left) || 0) + 16 + 'px';
-      clone.style.top = (parseFloat(clone.style.top) || 0) + 16 + 'px';
-    }
-    selected.after(clone);
-    select(clone);
+    let lastClone = null;
+    allSelected().forEach((n) => {
+      const clone = n.cloneNode(true);
+      clone.classList.remove('pml-selected');
+      if (!clone.className) clone.removeAttribute('class');
+      if (clone.style.position === 'absolute') {
+        clone.style.left = (parseFloat(clone.style.left) || 0) + 16 + 'px';
+        clone.style.top = (parseFloat(clone.style.top) || 0) + 16 + 'px';
+      }
+      n.after(clone);
+      lastClone = clone;
+    });
+    select(lastClone);
     setDirty(true);
   });
   $('#pml-del').addEventListener('click', () => {
     if (!selected || selected === slideEl) return;
     snapshot('del:' + Math.random());
-    const n = selected;
+    const nodes = allSelected();
     deselect();
-    n.remove();
+    nodes.forEach((n) => n.remove());
     setDirty(true);
   });
 
@@ -580,16 +728,7 @@
   $('#pml-prev').addEventListener('click', () => nav(-1));
   $('#pml-next').addEventListener('click', () => nav(1));
 
-  // ---------- insert menu ----------
-
-  const insertMenu = $('#pml-insert-menu');
-  $('#pml-insert').addEventListener('click', (e) => {
-    e.stopPropagation();
-    insertMenu.classList.toggle('open');
-  });
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.pml-menu-wrap')) insertMenu.classList.remove('open');
-  });
+  // ---------- insert rail ----------
 
   let insertOffset = 0;
   const placeNew = (node) => {
@@ -662,20 +801,161 @@
     reader.readAsDataURL(f);
   });
 
-  insertMenu.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-ins]');
-    if (!b) return;
-    insertMenu.classList.remove('open');
-    const kind = b.dataset.ins;
-    if (kind === 'image-upload') return uploadInput.click();
-    if (kind === 'image-url') {
-      return openTextPrompt('Image URL', 'https://…', (url) => {
-        if (url) { snapshot('insert:' + Math.random()); insertImage(url); }
-      });
-    }
+  // Shape factories: plain divs + inline styles so the toolbar color controls
+  // work on them; the arrow is an inline SVG stroked with currentColor.
+  const SHAPES = {
+    rect: {
+      label: 'Rectangle',
+      preview: '<span style="display:block;width:56px;height:36px;background:#7c6cff"></span>',
+      make() {
+        const n = document.createElement('div');
+        n.style.cssText = 'width:320px;height:180px;background:#7c6cff';
+        return n;
+      },
+    },
+    rounded: {
+      label: 'Rounded',
+      preview: '<span style="display:block;width:56px;height:36px;background:#7c6cff;border-radius:10px"></span>',
+      make() {
+        const n = document.createElement('div');
+        n.style.cssText = 'width:320px;height:180px;background:#7c6cff;border-radius:24px';
+        return n;
+      },
+    },
+    circle: {
+      label: 'Circle',
+      preview: '<span style="display:block;width:40px;height:40px;background:#7c6cff;border-radius:50%"></span>',
+      make() {
+        const n = document.createElement('div');
+        n.style.cssText = 'width:200px;height:200px;background:#7c6cff;border-radius:50%';
+        return n;
+      },
+    },
+    line: {
+      label: 'Line',
+      preview: '<span style="display:block;width:56px;height:3px;background:#7c6cff"></span>',
+      make() {
+        const n = document.createElement('div');
+        n.style.cssText = 'width:320px;height:4px;background:#7c6cff';
+        return n;
+      },
+    },
+    arrow: {
+      label: 'Arrow',
+      preview: '<svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="#7c6cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="13 5 20 12 13 19"/></svg>',
+      make() {
+        const t = document.createElement('div');
+        t.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="120" height="120" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"/><polyline points="13 5 20 12 13 19"/></svg>';
+        return t.firstElementChild;
+      },
+    },
+  };
+
+  // Curated icon set — stroke:currentColor so the text-color swatch recolors.
+  const ICONS = {
+    star: '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
+    heart: '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>',
+    check: '<polyline points="20 6 9 17 4 12"/>',
+    'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+    zap: '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+    globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    chart: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+    mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22 6 12 13 2 6"/>',
+    pin: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+    sun: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+    moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  };
+  const iconSvg = (name, size) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+
+  const rail = el('div', { class: 'pml-rail' });
+  const railTabs = el('div', { class: 'pml-rail-tabs' });
+  const railBody = el('div', { class: 'pml-rail-body' });
+  rail.appendChild(railTabs);
+  rail.appendChild(railBody);
+  document.body.appendChild(rail);
+
+  const railTile = (html, title, onClick) => {
+    const t = el('button', { class: 'pml-rail-tile', title });
+    t.innerHTML = html;
+    t.addEventListener('click', onClick);
+    return t;
+  };
+  const insertVia = (makeNode) => {
     snapshot('insert:' + Math.random());
-    placeNew(INSERTS[kind]());
-  });
+    placeNew(makeNode());
+  };
+
+  const RAIL_TABS = {
+    Text() {
+      const previews = {
+        heading: '<span class="pml-tile-big">Aa</span><span class="pml-tile-lbl">Heading</span>',
+        text: '<span class="pml-tile-big" style="font-size:15px">Text</span><span class="pml-tile-lbl">Text</span>',
+        bullets: '<span class="pml-tile-big" style="font-size:14px;text-align:left">• —<br>• —</span><span class="pml-tile-lbl">Bullets</span>',
+        card: '<span class="pml-tile-big" style="font-size:13px;border:1px solid #3a3a55;border-radius:8px;padding:6px 12px">Card</span><span class="pml-tile-lbl">Card</span>',
+      };
+      Object.keys(INSERTS).forEach((k) =>
+        railBody.appendChild(railTile(previews[k], 'Insert ' + k, () => insertVia(INSERTS[k])))
+      );
+    },
+    Shapes() {
+      Object.values(SHAPES).forEach((s) =>
+        railBody.appendChild(railTile(
+          s.preview + `<span class="pml-tile-lbl">${s.label}</span>`,
+          'Insert ' + s.label.toLowerCase(),
+          () => insertVia(s.make)
+        ))
+      );
+    },
+    Icons() {
+      Object.keys(ICONS).forEach((name) =>
+        railBody.appendChild(railTile(iconSvg(name, 28), 'Insert ' + name + ' icon', () => {
+          snapshot('insert:' + Math.random());
+          const t = document.createElement('div');
+          t.innerHTML = iconSvg(name, 96);
+          placeNew(t.firstElementChild);
+        }))
+      );
+    },
+    Images() {
+      railBody.appendChild(railTile(
+        '<span class="pml-tile-big">🔗</span><span class="pml-tile-lbl">From URL…</span>',
+        'Insert image from URL',
+        () => openTextPrompt('Image URL', 'https://…', (url) => {
+          if (url) { snapshot('insert:' + Math.random()); insertImage(url); }
+        })
+      ));
+      railBody.appendChild(railTile(
+        '<span class="pml-tile-big">⤴</span><span class="pml-tile-lbl">Upload…</span>',
+        'Upload image',
+        () => uploadInput.click()
+      ));
+    },
+  };
+
+  let railTab = 'Text';
+  const renderRail = () => {
+    railTabs.innerHTML = '';
+    railBody.innerHTML = '';
+    Object.keys(RAIL_TABS).forEach((name) => {
+      const b = el('button', { class: 'pml-rail-tab' + (name === railTab ? ' active' : '') }, name);
+      b.addEventListener('click', () => { railTab = name; renderRail(); });
+      railTabs.appendChild(b);
+    });
+    RAIL_TABS[railTab]();
+  };
+  renderRail();
+
+  let railOpen = false;
+  const toggleRail = () => {
+    railOpen = !railOpen;
+    rail.classList.toggle('open', railOpen);
+    $('#pml-insert').classList.toggle('active', railOpen);
+    document.documentElement.classList.toggle('pml-rail-open', railOpen);
+    fit();
+  };
+  $('#pml-insert').addEventListener('click', toggleRail);
 
   // Small inline prompt (browser dialogs are avoided on purpose).
   const openTextPrompt = (label, placeholder, cb) => {
@@ -725,9 +1005,11 @@
     if (dirs[e.key] && selected !== slideEl) {
       e.preventDefault();
       snapshot('nudge');
-      makeAbsolute(selected);
-      selected.style.left = (parseFloat(selected.style.left) || 0) + dirs[e.key][0] + 'px';
-      selected.style.top = (parseFloat(selected.style.top) || 0) + dirs[e.key][1] + 'px';
+      allSelected().forEach((n) => {
+        makeAbsolute(n);
+        n.style.left = (parseFloat(n.style.left) || 0) + dirs[e.key][0] + 'px';
+        n.style.top = (parseFloat(n.style.top) || 0) + dirs[e.key][1] + 'px';
+      });
       setDirty(true);
       updateResizer();
     }

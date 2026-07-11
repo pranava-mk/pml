@@ -171,6 +171,11 @@
   @media (max-width: 600px) { .layout-grid { grid-template-columns: repeat(2, 1fr); } }
   .layout-btn { min-height: 64px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: transparent; color: var(--text); font: 500 15px 'Space Grotesk', sans-serif; cursor: pointer; transition: border-color 0.18s; text-align: center; }
   .layout-btn:hover { border-color: var(--accent); }
+  .theme-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 8px 0; }
+  @media (max-width: 600px) { .theme-grid { grid-template-columns: repeat(2, 1fr); } }
+  .theme-card { padding: 14px 16px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: border-color 0.18s; background: transparent; }
+  .theme-card:hover, .theme-card:focus-visible { border-color: var(--accent); outline: none; }
+  .theme-card.active { border-color: var(--accent); }
 </style>
 </head>
 <body>
@@ -189,6 +194,13 @@
     <h2>Choose a layout</h2>
     <div class="layout-grid" id="layout-grid"></div>
     <div class="row"><button class="btn" id="layout-cancel">Cancel</button></div>
+  </div>
+</div>
+<div class="modal" id="theme-modal" hidden>
+  <div class="modal-box" style="width:min(520px,92vw)">
+    <h2>Choose a theme</h2>
+    <div class="theme-grid" id="theme-grid-modal"></div>
+    <div class="row"><button class="btn" id="theme-modal-cancel">Cancel</button></div>
   </div>
 </div>
 
@@ -225,6 +237,67 @@ code, .mono { font-family:'JetBrains Mono',monospace; }
 @keyframes pmlFadeIn{from{opacity:0}}@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
 @keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
 @media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}`;
+
+  const BOARDROOM_THEME = `@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+:root { --bg:#faf7f2; --surface:#f0ece4; --line:#e3dccf; --text:#16130e; --muted:#7a7265; --accent:#9a6b2f; --accent-2:#c49a52; }
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; display:grid; place-items:center; background:#e9e4da; }
+.slide { width:1280px; height:720px; position:relative; overflow:hidden; padding:88px 104px;
+  background:var(--bg); color:var(--text); font-family:'Inter',system-ui,sans-serif; display:flex; flex-direction:column; justify-content:center; }
+.kicker { font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); margin:0 0 20px; }
+h1.title { font-family:'Playfair Display',serif; font-size:84px; font-weight:900; line-height:1.04; margin:0 0 26px; letter-spacing:-.01em; }
+h2.heading { font-family:'Playfair Display',serif; font-size:52px; font-weight:700; margin:0 0 36px; }
+.subtitle { font-size:24px; color:var(--muted); margin:0; line-height:1.6; }
+.accent { background:linear-gradient(100deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.bullets { font-size:24px; line-height:2.1; margin:0; padding-left:24px; color:var(--text); }
+.bullets li::marker { color:var(--accent); }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:28px 32px; }
+.card h3 { margin:0 0 10px; font-size:24px; }
+.card p { margin:0; color:var(--muted); font-size:18px; line-height:1.6; }
+.footer { position:absolute; bottom:40px; left:104px; right:104px; display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); letter-spacing:.08em; }
+code, .mono { font-family:'JetBrains Mono',monospace; }
+[class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
+.fx-fade-in{animation-name:pmlFadeIn}.fx-fade-up{animation-name:pmlFadeUp}.fx-zoom-in{animation-name:pmlZoomIn}
+.fx-slide-left{animation-name:pmlSlideLeft}.fx-slide-right{animation-name:pmlSlideRight}.fx-blur-in{animation-name:pmlBlurIn}
+@keyframes pmlFadeIn{from{opacity:0}}@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
+@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
+@media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}`;
+
+  const NEON_THEME = `@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Outfit:wght@500;700;900&display=swap');
+:root { --bg:#030404; --surface:#061209; --line:#0e2419; --text:#e8fff4; --muted:#5d7a6d; --accent:#00ff9d; --accent-2:#00d5ff; }
+* { box-sizing: border-box; }
+body { margin:0; min-height:100vh; display:grid; place-items:center; background:#000; }
+.slide { width:1280px; height:720px; position:relative; overflow:hidden; padding:84px 96px;
+  background: linear-gradient(rgba(0,255,157,.04) 1px,transparent 1px), linear-gradient(90deg,rgba(0,255,157,.04) 1px,transparent 1px), var(--bg);
+  background-size:48px 48px,48px 48px,auto; color:var(--text); font-family:'Outfit',system-ui,sans-serif; display:flex; flex-direction:column; justify-content:center; }
+.kicker { font-family:'JetBrains Mono',monospace; font-size:14px; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); margin:0 0 20px; text-shadow:0 0 18px rgba(0,255,157,.5); }
+h1.title { font-size:92px; font-weight:900; line-height:.98; margin:0 0 26px; letter-spacing:-.02em; text-transform:uppercase; }
+h2.heading { font-size:56px; font-weight:900; margin:0 0 34px; text-transform:uppercase; letter-spacing:-.01em; }
+.subtitle { font-size:25px; color:var(--muted); margin:0; line-height:1.6; font-weight:500; }
+.accent { color:var(--accent); text-shadow:0 0 32px rgba(0,255,157,.55); }
+.bullets { font-size:25px; line-height:2; margin:0; padding-left:26px; font-weight:500; color:var(--text); }
+.bullets li::marker { color:var(--accent); }
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:44px; align-items:center; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:26px 30px; }
+.card h3 { margin:0 0 10px; font-size:24px; }
+.card p { margin:0; color:var(--muted); font-size:18px; line-height:1.6; }
+.footer { position:absolute; bottom:36px; left:96px; right:96px; display:flex; justify-content:space-between; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted); letter-spacing:.14em; }
+code, .mono { font-family:'JetBrains Mono',monospace; }
+[class*="fx-"]{animation-duration:.8s;animation-timing-function:cubic-bezier(.22,1,.36,1);animation-fill-mode:both;animation-delay:var(--fx-delay,0s)}
+.fx-fade-in{animation-name:pmlFadeIn}.fx-fade-up{animation-name:pmlFadeUp}.fx-zoom-in{animation-name:pmlZoomIn}
+.fx-slide-left{animation-name:pmlSlideLeft}.fx-slide-right{animation-name:pmlSlideRight}.fx-blur-in{animation-name:pmlBlurIn}
+@keyframes pmlFadeIn{from{opacity:0}}@keyframes pmlFadeUp{from{opacity:0;translate:0 36px}}@keyframes pmlZoomIn{from{opacity:0;scale:.82}}
+@keyframes pmlSlideLeft{from{opacity:0;translate:60px 0}}@keyframes pmlSlideRight{from{opacity:0;translate:-60px 0}}@keyframes pmlBlurIn{from{opacity:0;filter:blur(14px)}}
+@media (prefers-reduced-motion:reduce){[class*="fx-"]{animation:none}}`;
+
+  // Theme presets — CSS as strings (same convention as LAYOUTS).
+  // midnight.css = STARTER_THEME (no duplication).
+  const THEME_PRESETS = {
+    midnight:  { label: 'Midnight',  swatch: ['#0b0b12', '#7c6cff', '#ff6ec7'], css: STARTER_THEME },
+    boardroom: { label: 'Boardroom', swatch: ['#faf7f2', '#9a6b2f', '#16130e'], css: BOARDROOM_THEME },
+    neon:      { label: 'Neon',      swatch: ['#030404', '#00ff9d', '#00d5ff'], css: NEON_THEME },
+  };
 
   const slideDoc = (title, body) => `<!doctype html>
 <html lang="en">
@@ -278,6 +351,7 @@ ${body}
       title: 'My first deck',
       transition: 'slide',
       theme: STARTER_THEME,
+      themeName: 'midnight',
       slides: STARTER_SLIDES.map((s) => ({ ...s })),
       comments: { nextId: 1, comments: [] },
       assets: {},
@@ -454,6 +528,7 @@ ${body}
         </div>
         <nav>
           <span class="hint">click a slide to edit · click its name to rename</span>
+          <button class="btn" id="theme-btn" aria-label="Switch deck theme">🎨 Theme</button>
           <button class="btn" id="export-deck" title="Download as one self-contained HTML file">⇩ Export</button>
           <a class="btn primary" href="#/d/${encodeURIComponent(slug)}/present">▶ Present</a>
         </nav>
@@ -513,6 +588,7 @@ ${body}
     titleEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); titleEl.blur(); } });
     titleEl.addEventListener('blur', () => { d.title = titleEl.textContent.trim() || d.title; persist(); });
     document.getElementById('export-deck').addEventListener('click', () => exportDeck(slug));
+    document.getElementById('theme-btn').addEventListener('click', () => openThemeModal(slug));
     // drag-to-reorder slides
     const slideGrid = view.querySelector('.grid');
     let dragSrc = null;
@@ -741,6 +817,7 @@ addEventListener('resize',fit);fit();show();
       title: name,
       transition: 'slide',
       theme: STARTER_THEME,
+      themeName: 'midnight',
       slides: STARTER_SLIDES.map((s) => ({ ...s })),
       comments: { nextId: 1, comments: [] },
       assets: {},
@@ -781,6 +858,45 @@ addEventListener('resize',fit);fit();show();
   document.getElementById('layout-cancel').addEventListener('click', () => { layoutModal.hidden = true; });
   layoutModal.addEventListener('click', (e) => { if (e.target === layoutModal) layoutModal.hidden = true; });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !layoutModal.hidden) layoutModal.hidden = true; });
+
+  // ---------- theme picker ----------
+  const themeModal = document.getElementById('theme-modal');
+  const themeGridEl = document.getElementById('theme-grid-modal');
+  let currentThemeSlug = null;
+  function openThemeModal(slug) {
+    currentThemeSlug = slug;
+    const d = state.decks[slug];
+    const activeName = d.themeName || 'midnight';
+    // rebuild grid each open so active highlight is fresh
+    themeGridEl.innerHTML = '';
+    Object.entries(THEME_PRESETS).forEach(([id, { label, swatch }]) => {
+      const card = document.createElement('div');
+      card.className = 'theme-card' + (id === activeName ? ' active' : '');
+      card.innerHTML = '<span style="font-size:14px;font-weight:600;color:var(--text)">' + label + '</span>' +
+        '<div style="display:flex;gap:6px">' +
+        swatch.map((hex) => '<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:' + hex + ';border:1px solid rgba(128,128,128,.3)"></span>').join('') +
+        '</div>';
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', 'Switch to ' + label + ' theme');
+      card.addEventListener('click', () => {
+        if (!currentThemeSlug) return;
+        const d = state.decks[currentThemeSlug];
+        d.theme = THEME_PRESETS[id].css;
+        d.themeName = id;
+        persist();
+        themeModal.hidden = true;
+        route();
+      });
+      card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
+      themeGridEl.appendChild(card);
+    });
+    themeModal.hidden = false;
+    themeGridEl.querySelector('.theme-card')?.focus();
+  }
+  document.getElementById('theme-modal-cancel').addEventListener('click', () => { themeModal.hidden = true; });
+  themeModal.addEventListener('click', (e) => { if (e.target === themeModal) themeModal.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !themeModal.hidden) themeModal.hidden = true; });
 
   route();
 })();

@@ -10,7 +10,8 @@
     "start": "node bin/pml.js serve examples",
     "demo": "node bin/pml.js serve examples",
     "sync-app": "cp src/editor/editor.js src/editor/editor.css site/app/",
-    "test": "node tests/run.mjs"
+    "test": "node tests/run.mjs && node tests/verify-slice.mjs",
+    "test:slice": "node tests/verify-slice.mjs"
   },
   "keywords": [
     "presentations",

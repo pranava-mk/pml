@@ -451,3 +451,108 @@ body.pml-comment-mode .slide, body.pml-comment-mode .slide * { cursor: crosshair
 }
 #pml-notes-ta:focus { border-color: #7c6cff; }
 #pml-notes-ta::placeholder { color: #4b4b6b; }
+
+/* ---------- insert rail ---------- */
+
+/* Drawer — fixed right edge, below toolbar (99990) and comments panel (99991) */
+.pml-rail {
+  position: fixed;
+  top: 68px;
+  right: 0;
+  bottom: 0;
+  width: 268px;
+  box-sizing: border-box;
+  background: #12121c;
+  border-left: 1px solid #2b2b42;
+  z-index: 99985;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  /* off-canvas by default — same 0.22s ease as .pml-panel */
+  transform: translateX(110%);
+  transition: transform 0.22s ease;
+}
+.pml-rail.open { transform: translateX(0); }
+
+/* Tab row */
+.pml-rail-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  padding: 10px;
+  border-bottom: 1px solid #2b2b42;
+  flex-shrink: 0;
+}
+
+/* Individual tab — mirrors .pml-btn, flex:1 to fill row evenly */
+.pml-rail-tab {
+  flex: 1;
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #cfcfe2;
+  padding: 5px 6px;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.2;
+  text-align: center;
+  transition: background 0.12s, border-color 0.12s;
+}
+.pml-rail-tab:hover { background: #24243a; }
+.pml-rail-tab.active { background: #353560; color: #fff; border-color: #7c6cff; }
+
+/* Tile grid — scrollable, 2-column */
+.pml-rail-body {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 12px;
+  align-content: start;
+}
+
+/* Clickable insert tile */
+.pml-rail-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 76px;
+  background: #1a1a2a;
+  border: 1px solid #2b2b42;
+  border-radius: 12px;
+  padding: 12px 8px;
+  color: #cfcfe2;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pml-rail-tile:hover { background: #24243a; border-color: #7c6cff; }
+
+/* Prevent inline SVG previews from overflowing the tile */
+.pml-rail-tile svg { flex: none; }
+
+/* Large preview glyph inside a tile */
+.pml-tile-big {
+  font-size: 26px;
+  line-height: 1.2;
+  color: #eeeef4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Small label beneath the preview */
+.pml-tile-lbl {
+  font-size: 11.5px;
+  color: #8b8ba3;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* Re-center slide when rail is open: shift body right by rail width + gutter */
+html.pml-editing.pml-rail-open body { padding-right: 316px; }
