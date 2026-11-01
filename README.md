@@ -4,15 +4,23 @@
 
 🌐 **[presentations-markup-language.vercel.app](https://presentations-markup-language.vercel.app)** · ⚡ **[Try the app — no install](https://presentations-markup-language.vercel.app/app/)** Plain HTML slides with visual editing, comments, presenter mode, and live reload — built to sit inside the AI coding workflow you already use.
 
+> **Not yet on npm.** The `npx pmlkit` commands below describe the intended
+> install path once published — for now, clone the repo and use `node bin/pml.js`
+> as shown in "From a local clone."
+
+Once published:
+
 ```bash
 npx pmlkit new my-deck
 cd my-deck && npx pmlkit serve
 # CLI is `pml` when installed globally: npm i -g pmlkit
 ```
 
-Or from a local clone:
+**From a local clone** (works today):
 
 ```bash
+git clone https://github.com/pranava-mk/pml.git
+cd pml
 node bin/pml.js new my-deck
 cd my-deck && node ../bin/pml.js serve
 # → http://localhost:4321
