@@ -4,19 +4,22 @@
 
 🌐 **[presentations-markup-language.vercel.app](https://presentations-markup-language.vercel.app)** · ⚡ **[Try the app — no install](https://presentations-markup-language.vercel.app/app/)** Plain HTML slides with visual editing, comments, presenter mode, and live reload — built to sit inside the AI coding workflow you already use.
 
-> **Not yet on npm.** The `npx pmlkit` commands below describe the intended
-> install path once published — for now, clone the repo and use `node bin/pml.js`
-> as shown in "From a local clone."
+> **Not yet on npm.** There is no `npx pmlkit` — that package has never been
+> published. The real, working install path is the one-liner below, which
+> clones the repo and runs it from source.
 
-Once published:
+**One command, nothing pre-cloned:**
 
 ```bash
-npx pmlkit new my-deck
-cd my-deck && npx pmlkit serve
-# CLI is `pml` when installed globally: npm i -g pmlkit
+curl -fsSL https://raw.githubusercontent.com/pranava-mk/pml/main/install.sh | bash
 ```
 
-**From a local clone** (works today):
+This checks for `git`/`node`/`npm` (offering to install anything missing —
+it asks before touching your system), clones the repo into `./pml` if you're
+not already inside a checkout, runs `npm install`, then boots the showcase
+hub at `http://localhost:4321`.
+
+**From a local clone**, once you have the repo:
 
 ```bash
 git clone https://github.com/pranava-mk/pml.git
